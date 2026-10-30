@@ -1669,6 +1669,27 @@ def _topic_identity(hit: TopicMemorySearchHit) -> tuple[str, int]:
     return (hit.artifact_ref.artifact_id, hit.artifact_ref.revision)
 
 
+async def _hide_unavailable_topic_hits(
+    runtime: BuiltinRuntime,
+    scope_id: str,
+    result: TopicMemorySearchResult,
+) -> TopicMemorySearchResult:
+    """Remove Topic Memory hits whose registered lifecycle node is unavailable.
+
+    A withdrawn Topic Memory keeps its immutable publication and stays exactly
+    readable; only its native search/context visibility changes.
+    """
+
+    lifecycle = runtime.lifecycle
+    if lifecycle is None:
+        return result
+    unavailable = await lifecycle.unavailable_topic_artifact_ids(scope_id)
+    if not unavailable:
+        return result
+    hits = tuple(hit for hit in result.hits if hit.artifact_ref.artifact_id not in unavailable)
+    return result if len(hits) == len(result.hits) else result.model_copy(update={"hits": hits})
+
+
 def _admission_keyword(admission: AdmissionFloor | None) -> dict[str, Any]:
     """Forward ``admission`` only when set, keeping today's exact downstream calls otherwise."""
 
@@ -2694,6 +2715,7 @@ class ScopedTopicMemoryApplication:
                     query_embedding,
                     embedding_timeout_seconds,
                 )
+        result = await _hide_unavailable_topic_hits(self._runtime, self.scope_id, result)
         observer = self._runtime._topic_memory_search_observer
         if observer is not None:
             try:
@@ -3104,6 +3126,9 @@ class BuiltinRuntime:
         self.decision_model = decision_model
         self.publications = publication_application
         self.scopes = scope_application
+        # Composition attaches the Scope lifecycle service after construction; it stays
+        # absent on a directly constructed Runtime or a custom provider.
+        self.lifecycle: Any = None
         self._readiness = RuntimeReadinessChecks() if readiness is None else readiness
         self._clock = _utc_now if clock is None else clock
         self._tracing = tracing

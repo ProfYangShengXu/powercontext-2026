@@ -99,6 +99,7 @@ from powercontext.builtin.persistence.processing_migration import (
 from powercontext.builtin.persistence.scope_search_schema import ensure_scope_search_schema
 from powercontext.builtin.persistence.seekdb.profile import SeekDBConfig, SeekDBProfile
 from powercontext.builtin.persistence.skill_distribution_schema import ensure_skill_distribution_schema
+from powercontext.builtin.persistence.source_lifecycle import SOURCE_LIFECYCLE_TABLES
 from powercontext.builtin.persistence.sqlite.experience_index import SQLiteExperienceFTSIndex
 from powercontext.builtin.persistence.sqlite.memory_index import SQLiteMemoryFTSIndex, SQLiteMemoryVectorIndex
 from powercontext.builtin.persistence.sqlite.profile import SQLiteConfig, SQLiteProfile
@@ -156,6 +157,7 @@ from powercontext.builtin.runtime.readiness import (
 )
 from powercontext.builtin.runtime.recall_sufficiency import RecallSufficiencyPolicy
 from powercontext.builtin.runtime.relational import RelationalContexts
+from powercontext.builtin.runtime.source_lifecycle import SourceLifecycleApplication
 from powercontext.builtin.runtime.topic_memory_processing import (
     TopicMemoryWorkerSpec,
     run_topic_memory_worker,
@@ -653,6 +655,7 @@ async def open_builtin_runtime(
                 remote_ingestion=contexts,
             )
         )
+        runtime.lifecycle = SourceLifecycleApplication(contexts)
         runtime.artifact_processing_supervisor = await resources.enter_async_context(
             _open_artifact_processing_supervisor(config, contexts, processing_bindings, tracing=tracing)
         )
@@ -892,7 +895,7 @@ async def open_builtin_contexts(
         topic_index = CompositeTopicMemoryIndex(*topic_indexes)
         async with SQLiteProfile.open(
             database,
-            tables=BUILTIN_TABLES + index.tables + topic_index.tables,
+            tables=BUILTIN_TABLES + SOURCE_LIFECYCLE_TABLES + index.tables + topic_index.tables,
             load_vector_extension=embedding_model is not None,
         ) as profile:
             async with profile.database.transaction() as connection:
@@ -968,7 +971,7 @@ async def open_builtin_contexts(
     if embedding_model is not None:
         topic_indexes.append(OceanBaseTopicMemoryVectorIndex(embedding_model.profile))
     topic_index = CompositeTopicMemoryIndex(*topic_indexes)
-    tables = BUILTIN_TABLES + index.tables + topic_index.tables
+    tables = BUILTIN_TABLES + SOURCE_LIFECYCLE_TABLES + index.tables + topic_index.tables
     if isinstance(database, OceanBaseConfig):
         profile_context = OceanBaseProfile.open(database, tables=tables)
     elif isinstance(database, SeekDBConfig):
