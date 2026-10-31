@@ -522,6 +522,51 @@ def _normalized_question(question: str) -> str:
     return _P_AND_L.sub(" income ", question)
 
 
+# A calculated metric (DPO, DSO, DIO, a margin) is not printed on the page that
+# holds its inputs, so the nominal lexical match is empty by construction.  These
+# are the fixed, published decompositions (the cash-conversion cycle and a ratio
+# over revenue), not free paraphrase: expansion only adds the exact line-item
+# wording that the statement actually prints.  The expansion terms are down-
+# weighted so they can promote the right table without displacing a page that
+# already matches the question verbatim.
+_METRIC_EXPANSIONS: tuple[tuple[re.Pattern[str], tuple[str, ...]], ...] = (
+    (
+        re.compile(r"\b(?:dpo|days?\s+payable(?:\s+outstanding)?)\b", re.IGNORECASE),
+        ("accounts", "payable", "payables", "cost", "sales", "cogs", "inventory"),
+    ),
+    (
+        re.compile(
+            r"\b(?:dso|days?\s+(?:sales|receivable)s?(?:\s+outstanding)?)\b",
+            re.IGNORECASE,
+        ),
+        ("accounts", "receivable", "receivables", "net", "sales", "revenue"),
+    ),
+    (
+        re.compile(r"\b(?:dio|days?\s+inventory(?:\s+outstanding)?)\b", re.IGNORECASE),
+        ("inventory", "cost", "sales", "cogs"),
+    ),
+    (
+        re.compile(r"gross\s+margin", re.IGNORECASE),
+        ("gross", "profit", "net", "sales", "revenue"),
+    ),
+    (
+        re.compile(r"operating\s+margin", re.IGNORECASE),
+        ("operating", "income", "revenue", "net", "sales"),
+    ),
+)
+_EXPANSION_WEIGHT = 0.5
+
+
+def _metric_expansion_terms(question: str) -> tuple[str, ...]:
+    """Return the statement line-item vocabulary for a calculated metric."""
+
+    terms: list[str] = []
+    for pattern, expansions in _METRIC_EXPANSIONS:
+        if pattern.search(question):
+            terms.extend(expansions)
+    return tuple(dict.fromkeys(terms))
+
+
 def _question_intents(raw_terms: Sequence[str]) -> frozenset[str]:
     """Classify which filing section a question is asking about, if any."""
 
@@ -617,6 +662,7 @@ class _QueryPlan:
     raw_terms: tuple[str, ...]
     unique_terms: tuple[str, ...]
     weights: tuple[tuple[str, float], ...]
+    expansion_weights: tuple[tuple[str, float], ...]
     bigrams: tuple[tuple[str, str], ...]
     trigrams: tuple[tuple[str, str, str], ...]
     intents: frozenset[str]
@@ -678,14 +724,23 @@ class _PageIndex:
         }
 
     def plan(self, question: str) -> _QueryPlan:
+        question = _normalized_question(question)
         tokens = tuple(_index_tokens(question))
         raw_terms = tuple(_rank_tokens(question))
         unique_terms = tuple(dict.fromkeys(tokens))
+        expansion_weights = tuple(
+            (form, self.idf[form] * _EXPANSION_WEIGHT)
+            for form in dict.fromkeys(
+                form for term in _metric_expansion_terms(question) for form in (term, stem_term(term))
+            )
+            if form in self.idf
+        )
         return _QueryPlan(
             tokens=tokens,
             raw_terms=raw_terms,
             unique_terms=unique_terms,
             weights=tuple((term, self.idf[term]) for term in unique_terms if term in self.idf),
+            expansion_weights=expansion_weights,
             bigrams=tuple(dict.fromkeys(zip(raw_terms, raw_terms[1:]))),
             trigrams=tuple(dict.fromkeys(zip(raw_terms, raw_terms[1:], raw_terms[2:]))),
             intents=frozenset(_question_intents(raw_terms)),
@@ -703,8 +758,9 @@ class _PageIndex:
     def bm25(self, index: int, plan: _QueryPlan) -> float:
         """Best-passage BM25, the standard MaxP baseline for a localized answer."""
 
-        if not plan.weights:
+        if not plan.weights and not plan.expansion_weights:
             return 0.0
+        weights = plan.weights + plan.expansion_weights
         page_passages = self.passages[index]
         average = self.average_length
         k1 = 1.2
@@ -716,7 +772,7 @@ class _PageIndex:
                 continue
             counts = Counter(passage)
             score = 0.0
-            for term, weight in plan.weights:
+            for term, weight in weights:
                 frequency = counts.get(term, 0)
                 if frequency:
                     denominator = frequency + k1 * (1.0 - b + b * length / average)
@@ -734,6 +790,9 @@ class _PageIndex:
         only shares the company name and the year cannot win on coverage.
         """
 
+        # Coverage stays on the question's own terms; counting the expansion
+        # terms in the denominator would dilute every verbatim match.  BM25
+        # already scores the expansion terms.
         total = sum(weight for _term, weight in plan.weights)
         if total <= 0.0:
             return 0.0
