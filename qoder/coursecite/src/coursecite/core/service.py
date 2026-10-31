@@ -12,7 +12,7 @@ from ..ports.store import StorePort
 from .ingest import IngestReport, load_corpus
 from .models import Filters, Hit, Query, Ref, RetrievalRecord, SearchResponse
 from .policy import DEFAULT_TOP_K
-from .retrieval import make_query
+from .retrieval import ensure_ordered, make_query
 
 
 def _now_iso() -> str:
@@ -40,6 +40,7 @@ class SearchService:
         query = make_query(text, course=course, max_lecture=max_lecture, limit=limit)
         started = time.perf_counter()
         hits = self._store.search(query)
+        ensure_ordered(hits)  # 存储侧必须给出 1..N 的最终顺序；渲染层不重排。
         elapsed_ms = max(0, int(round((time.perf_counter() - started) * 1000)))
         record = RetrievalRecord(
             query=query.normalized,
@@ -81,4 +82,6 @@ class IngestService:
         if rebuild:
             self._store.reset()
         report.written = self._store.put(chunks)
+        # 库内总数：第二次 ingest 后仍应等于 report.chunks（upsert 幂等）。
+        report.total = int(self._store.stats().get("chunks", 0))
         return report

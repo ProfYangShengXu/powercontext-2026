@@ -1,0 +1,24 @@
+# seekdb server（评审机同款）。Windows 上 pyseekdb 没有 embedded，必须走这里。
+#   docker compose up -d
+#   docker compose down          # 保留数据卷
+#   docker compose down -v       # 连数据一起删
+services:
+  seekdb:
+    image: oceanbase/seekdb:latest
+    container_name: coursecite-seekdb
+    ports:
+      - "2881:2881"   # SQL 端口，pyseekdb / pymysql 连这个
+      - "2886:2886"   # obshell 管理台（HTTP），可选；不参与检索
+    volumes:
+      - seekdb-data:/var/lib/seekdb
+    restart: unless-stopped
+    healthcheck:
+      # 镜像内自带 mysqladmin；就绪后再跑 ingest，避免 connection refused。
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -P2881 -uroot --silent"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  seekdb-data:

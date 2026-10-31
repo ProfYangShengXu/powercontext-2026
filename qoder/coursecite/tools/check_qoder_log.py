@@ -2,8 +2,10 @@
 """审计 Qoder 开发记录与代码是否对得上（文档 §8.4 的可执行版）。
 
 三档判据，全绿才退出码 0：
-  1. 每个触及 src/*.py 的 commit 要么带 `Qoder-Quest:` trailer，要么 message 以 `manual:` 开头。
-  2. docs/qoder-log/index.md 里每个 Quest ID 至少对应一个真实 commit（git log --grep）。
+  1. 每个触及 src/*.py 的 commit 要么带 `Qoder-Quest:` trailer，要么 message 以 `manual:` 开头，
+     要么其 hash 登记在 index.md 的人工改动表里。
+  2. docs/qoder-log/index.md（`qoder/coursecite/docs/` 或 `qoder/docs/` 均可）里每个 Quest ID
+     至少对应一个真实 commit（git log --grep）。
   3. src/ 下每个文件至少被一个合规 commit 碰过。
 
 用法：
@@ -50,6 +52,18 @@ def parse_index_quests(path: Path) -> list[str]:
     return sorted(set(QUEST_RE.findall(text)))
 
 
+def find_index(repo: Path) -> Path:
+    """开发记录索引的候选位置。
+
+    架构文档写在 `qoder/docs/qoder-log/`，而脚本默认以 `qoder/coursecite` 为仓库根；
+    两个位置都认，避免"文档说 A、脚本查 B"。
+    """
+    for path in (repo / "docs" / "qoder-log" / "index.md", repo.parent / "docs" / "qoder-log" / "index.md"):
+        if path.is_file():
+            return path
+    return repo / "docs" / "qoder-log" / "index.md"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", default=str(PROJECT))
@@ -64,6 +78,8 @@ def main() -> int:
         return 2
 
     errors: list[str] = []
+    index_path = find_index(repo)
+    index_text = index_path.read_text(encoding="utf-8") if index_path.is_file() else ""
     src_commits = commits_touching(repo, "src")
     if not src_commits:
         errors.append("没有任何 commit 改动过 src/（Qoder 开发证据链为空）")
@@ -74,16 +90,20 @@ def main() -> int:
         if quest:
             compliant.append(sha)
             continue
+        # 人工改动：message 带 manual: 前缀，或 hash 登记在 index.md 的人工改动表。
         if message.startswith(MANUAL_PREFIX):
             print(f"[WARN] manual commit {sha[:9]}：人工改动，需在 index.md 人工改动表登记")
             compliant.append(sha)
             continue
-        errors.append(f"commit {sha[:9]} 改动了 src/ 但没有 Qoder-Quest trailer，也不是 manual:")
+        if sha[:9] in index_text or sha in index_text:
+            print(f"[WARN] commit {sha[:9]}：已在 index.md 登记为人工改动")
+            compliant.append(sha)
+            continue
+        errors.append(f"commit {sha[:9]} 改动了 src/ 但没有 Qoder-Quest trailer，也不是 manual:（或未在 index.md 登记）")
 
-    index_path = repo / "docs" / "qoder-log" / "index.md"
     index_quests = parse_index_quests(index_path)
     if not index_quests:
-        errors.append("docs/qoder-log/index.md 里没有任何 Quest ID")
+        errors.append(f"{index_path} 里没有任何 Quest ID")
     for quest in index_quests:
         if not git(repo, "log", "--all", "--grep", re.escape(quest), "--format=%H").strip():
             errors.append(f"index.md 记录的 Quest {quest} 在 git log 里找不到对应 commit")

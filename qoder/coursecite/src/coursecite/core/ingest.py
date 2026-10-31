@@ -27,6 +27,7 @@ class IngestReport:
     chunks: int = 0
     written: int = 0
     duplicates: int = 0
+    total: int = 0
     skipped: list[str] = field(default_factory=list)
     courses: list[str] = field(default_factory=list)
 
@@ -37,6 +38,7 @@ class IngestReport:
             "chunks": self.chunks,
             "written": self.written,
             "duplicates": self.duplicates,
+            "total": self.total,
             "skipped": list(self.skipped),
             "courses": list(self.courses),
         }

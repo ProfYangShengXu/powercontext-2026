@@ -14,6 +14,7 @@ from ..core.models import Chunk, Filters, Hit, Query, Ref, RetrievalRecord
 from ..ports.store import NoMatch, ReadOnlyStore, StoreError
 
 SCHEMA = "coursecite.snapshot.v1"
+MAX_IN_MEMORY_RECORDS = 200
 
 
 class SnapshotStore:
@@ -87,7 +88,9 @@ class SnapshotStore:
 
     def record_search(self, record: RetrievalRecord) -> None:
         # 静态站没有数据库：留痕只保存在当前进程内，用于页面下方展示。
+        # 进程可能长期驻留（本地 serve），只保留最近 N 条，避免无界增长。
         self._records.insert(0, record)
+        del self._records[MAX_IN_MEMORY_RECORDS:]
 
     def history(self, limit: int) -> list[RetrievalRecord]:
         return list(self._records[:limit])

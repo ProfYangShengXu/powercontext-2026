@@ -6,8 +6,11 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import os
+import sys
+import threading
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -35,6 +38,30 @@ seekdb 连不上 / 初始化失败：{error}
        coursecite serve
 """
 
+_WINDOWS_HINT = """\
+Windows 上 pyseekdb 没有 embedded 模式（pylibseekdb 只有 Linux/macOS 轮子），
+必须连 seekdb server。请先起 Docker，再设置连接串：
+
+  cd qoder/coursecite && docker compose up -d
+  set SEEKDB_HOST=127.0.0.1
+  set SEEKDB_PORT=2881
+  set COURSECITE_STORE=live"""
+
+
+def _synchronized(method):
+    """同一个 LiveStore 的连接被 FastAPI 线程池共享，串行化数据库访问。
+
+    pymysql 的单条连接不是线程安全的；两个并发 /api/search 会踩同一游标。
+    ONNX 推理本身也在锁内，换来的是可预测的正确性（演示只有个位数并发）。
+    """
+
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
+
 
 def make_embedding_function(cache_dir: Path | None):
     """构造 ONNX 嵌入器；支持自定义缓存目录（默认 ~/.cache/pyseekdb）。"""
@@ -59,9 +86,11 @@ class LiveStore:
         self._settings = settings
         self._client = None
         self._collection = None
+        self._embedding_function = None
         self._log_ready = False
         self._sql_trace: list[str] = []
         self._trace_enabled = False
+        self._lock = threading.RLock()
         self._connect()
 
     # ------------------------------------------------------------------ 连接
@@ -80,9 +109,12 @@ class LiveStore:
                     database=self._settings.seekdb_database,
                 )
             else:
+                if sys.platform.startswith("win"):
+                    raise StoreUnavailable(_WINDOWS_HINT)
                 path = self._settings.seekdb_path or str(PROJECT_ROOT / ".seekdb-data")
                 self._client = pyseekdb.Client(path=path)
             embedding_function = make_embedding_function(self._settings.embed_cache)
+            self._embedding_function = embedding_function
             self._collection = self._client.get_or_create_collection(
                 name=self._settings.collection,
                 embedding_function=embedding_function,
@@ -147,6 +179,7 @@ class LiveStore:
             knn_arm["where"] = where
         return query_arm, knn_arm, {"rrf": {"rank_window_size": 60, "rank_constant": 60}}
 
+    @_synchronized
     def search(self, query: Query) -> list[Hit]:
         query_arm, knn_arm, rank = self._search_parm(query)
         self._sql_trace.clear()
@@ -174,6 +207,13 @@ class LiveStore:
         for rank, chunk_id in enumerate(ids, start=1):
             meta = metadatas[rank - 1] if rank - 1 < len(metadatas) else {}
             meta = meta or {}
+            # 缺出处字段说明存储返回的 metadata 不可信；宁可显式失败，
+            # 也不要在页面上渲染一个「（无出处）」的假结果。
+            if not meta.get("course") or meta.get("lecture") is None:
+                raise StoreError(
+                    f"检索结果缺少出处字段（chunk_id={chunk_id}, metadata={meta!r}）；"
+                    f"请检查 pyseekdb 版本或重建索引。"
+                )
             score = float(distances[rank - 1]) if rank - 1 < len(distances) else 0.0
             document = documents[rank - 1] if rank - 1 < len(documents) else ""
             hits.append(
@@ -227,6 +267,7 @@ class LiveStore:
             "content_hash": chunk.content_hash,
         }
 
+    @_synchronized
     def put(self, chunks: Sequence[Chunk]) -> int:
         if not chunks:
             raise IncompleteCorpus("没有可写入的段落")
@@ -244,10 +285,13 @@ class LiveStore:
             written += len(batch)
         return written
 
+    @_synchronized
     def reset(self) -> None:
         try:
             self._client.delete_collection(self._settings.collection)
-            embedding_function = make_embedding_function(self._settings.embed_cache)
+            # 复用同一个 ONNX 会话；每次 reset 都新建会让常驻内存短暂翻倍。
+            embedding_function = self._embedding_function or make_embedding_function(self._settings.embed_cache)
+            self._embedding_function = embedding_function
             self._collection = self._client.get_or_create_collection(
                 name=self._settings.collection, embedding_function=embedding_function
             )
@@ -255,6 +299,7 @@ class LiveStore:
         except Exception as exc:  # noqa: BLE001
             raise StoreError(f"重建索引失败：{exc}") from exc
 
+    @_synchronized
     def obtain(self, ref: Ref) -> Chunk | None:
         try:
             result = self._collection.get(ids=[ref.chunk_id], include=["documents", "metadatas"])
@@ -297,6 +342,7 @@ class LiveStore:
             raise StoreError(f"创建 {LOG_TABLE} 失败：{exc}") from exc
         self._log_ready = True
 
+    @_synchronized
     def record_search(self, record: RetrievalRecord) -> None:
         self._ensure_log_table()
         try:
@@ -317,6 +363,7 @@ class LiveStore:
         except Exception as exc:  # noqa: BLE001
             raise StoreError(f"写 {LOG_TABLE} 失败：{exc}") from exc
 
+    @_synchronized
     def history(self, limit: int) -> list[RetrievalRecord]:
         self._ensure_log_table()
         try:
@@ -344,6 +391,7 @@ class LiveStore:
             )
         return records
 
+    @_synchronized
     def stats(self) -> dict:
         chunks = int(self._collection.count())
         log_rows = 0
@@ -360,6 +408,7 @@ class LiveStore:
             "seekdb": self._settings.seekdb_host or self._settings.seekdb_path or str(PROJECT_ROOT / ".seekdb-data"),
         }
 
+    @_synchronized
     def close(self) -> None:
         if self._client is not None:
             try:

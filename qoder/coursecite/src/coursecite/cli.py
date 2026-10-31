@@ -8,6 +8,7 @@ import sys
 
 from .bootstrap.main import build_app
 from .config import ConfigError, Settings
+from .core.policy import DEFAULT_TOP_K
 from .core.retrieval import format_hits_table
 from .core.service import SearchService
 from .export import export_snapshot
@@ -48,7 +49,7 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
         return _fail(str(exc), EXIT_STORE)
     print(
         f"入库完成：文件 {report.files}，段落 {report.chunks}，写入 {report.written}，"
-        f"重复跳过 {report.duplicates}"
+        f"重复跳过 {report.duplicates}，库内总计 {report.total}"
     )
     print(f"课程：{', '.join(report.courses) or '（无）'}")
     if report.skipped:
@@ -151,7 +152,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("query")
     p.add_argument("--course", default=None)
     p.add_argument("--lecture-max", dest="lecture_max", type=int, default=None)
-    p.add_argument("--limit", type=int, default=8)
+    p.add_argument("--limit", type=int, default=DEFAULT_TOP_K)
     p.add_argument("--json", action="store_true")
     p.add_argument("--show-sql", dest="show_sql", action="store_true", help="打印实际发给 seekdb 的 SQL")
     p.set_defaults(func=_cmd_search)
@@ -181,6 +182,9 @@ def main(argv: list[str] | None = None) -> int:
         return int(args.func(args))
     except ConfigError as exc:
         return _fail(f"配置错误：{exc}", EXIT_CONFIG)
+    except (ValueError, FileNotFoundError) as exc:
+        # 与 Web 的 400 对齐：非法 limit / 端口 / 缺查询清单都属于「用法/配置错」。
+        return _fail(f"参数或文件错误：{exc}", EXIT_CONFIG)
     except StoreUnavailable as exc:
         return _fail(str(exc), EXIT_CONFIG)
     except StoreError as exc:
