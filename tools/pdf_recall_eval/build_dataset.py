@@ -45,9 +45,7 @@ from powercontext.sources.pdf_pages import (
     parse_pdf_document,
 )
 
-DEFAULT_PDF = (
-    "competition/challenges/source-03-pdf-retrieval/workload/public/pdfs/PEPSICO_2022_10K.pdf"
-)
+DEFAULT_PDF = "competition/challenges/source-03-pdf-retrieval/workload/public/pdfs/PEPSICO_2022_10K.pdf"
 DOCUMENT_ID = "PEPSICO_2022_10K"
 SEED = 20221031
 TARGET_PER_FAMILY = 34
@@ -56,14 +54,10 @@ _WS = re.compile(r"\s+")
 _TOKEN = re.compile(r"[A-Za-z]+|\d+")
 # A financial-table row anchored at the start of a physical line, e.g.
 #   "Net Revenue $ 86,392 $ 79,474 $ 70,372"  or  "Total $ 411 $ 247 $ 289"
-_NUMERIC_ROW = re.compile(
-    r"^(?P<label>[A-Z][A-Za-z][A-Za-z &,'()./-]{2,55}?)\s+\$\s*(?P<number>\d[\d,]{2,})"
-)
+_NUMERIC_ROW = re.compile(r"^(?P<label>[A-Z][A-Za-z][A-Za-z &,'()./-]{2,55}?)\s+\$\s*(?P<number>\d[\d,]{2,})")
 # A table row without a currency sign, e.g. "Cost of sales 40,576 37,075 31,797".
 # Only applied on pages already proven to be table pages by _NUMERIC_ROW.
-_NUMERIC_PLAIN_ROW = re.compile(
-    r"^(?P<label>[A-Z][A-Za-z][A-Za-z &,'()./-]{2,45}?)\s+(?P<number>\d[\d,]{2,})\s+\d"
-)
+_NUMERIC_PLAIN_ROW = re.compile(r"^(?P<label>[A-Z][A-Za-z][A-Za-z &,'()./-]{2,45}?)\s+(?P<number>\d[\d,]{2,})\s+\d")
 # Section headings that actually start a section, not a table-of-contents entry
 # (TOC entries end in a bare page number and are filtered separately).
 _HEADING = re.compile(
@@ -155,17 +149,13 @@ def _numeric_candidates(page_texts: list[str], limit: int) -> list[dict]:
             if len(value) < 4 or not 1 <= len(pages) <= 3 or key in seen:
                 continue
             seen.add(key)
-            out.append(
-                {
-                    "document_id": DOCUMENT_ID,
-                    "gold_pages": pages,
-                    "construction": "numeric",
-                    "anchor": label,
-                    "question": (
-                        f"What was {label} reported as in PepsiCo's fiscal 2022 consolidated statements?"
-                    ),
-                }
-            )
+            out.append({
+                "document_id": DOCUMENT_ID,
+                "gold_pages": pages,
+                "construction": "numeric",
+                "anchor": label,
+                "question": (f"What was {label} reported as in PepsiCo's fiscal 2022 consolidated statements?"),
+            })
     return out[:limit]
 
 
@@ -197,18 +187,13 @@ def _entity_candidates(page_texts: list[str], limit: int) -> list[dict]:
         heading = heading_text[key]
         if len(_content_tokens(heading)) < 2:
             continue
-        out.append(
-            {
-                "document_id": DOCUMENT_ID,
-                "gold_pages": unique_pages,
-                "construction": "entity",
-                "anchor": heading,
-                "question": (
-                    f"According to PepsiCo's FY2022 Form 10-K, what is covered under "
-                    f'"{heading}"?'
-                ),
-            }
-        )
+        out.append({
+            "document_id": DOCUMENT_ID,
+            "gold_pages": unique_pages,
+            "construction": "entity",
+            "anchor": heading,
+            "question": (f'According to PepsiCo\'s FY2022 Form 10-K, what is covered under "{heading}"?'),
+        })
     return out[:limit]
 
 
@@ -223,18 +208,13 @@ def _first_sentence_candidates(page_texts: list[str], limit: int) -> list[dict]:
         if len(content) < 4:
             continue
         phrase = " ".join(content)
-        out.append(
-            {
-                "document_id": DOCUMENT_ID,
-                "gold_pages": [number],
-                "construction": "first-sentence",
-                "anchor": phrase,
-                "question": (
-                    f"According to PepsiCo's FY2022 annual report, what does the filing "
-                    f"state about {phrase}?"
-                ),
-            }
-        )
+        out.append({
+            "document_id": DOCUMENT_ID,
+            "gold_pages": [number],
+            "construction": "first-sentence",
+            "anchor": phrase,
+            "question": (f"According to PepsiCo's FY2022 annual report, what does the filing state about {phrase}?"),
+        })
     return out[:limit]
 
 

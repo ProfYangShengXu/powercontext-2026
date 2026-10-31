@@ -13,6 +13,7 @@ published acceptance suite checks citation *shape* but never measures the hidden
 | `proxy_dataset.jsonl` | 100 generated `(question → gold page(s))` pairs (100 as generated; 27 numeric, 17 entity, 56 first-sentence). |
 | `real_questions.jsonl` | The five real FinanceBench questions shipped in the public workload, with page numbers derived from the upstream `evidence_page_num` field (`+1`, since upstream is 0-based). Attribution: FinanceBench revision `cc39aeb4`, CC BY-NC 4.0. |
 | `evaluate.py` | Persists a PDF into a real Runtime scope (cached), runs the production `search_pdf_pages`, and reports Recall@20 / Recall@5 / MRR. `--explain` shows each arm's rank for the gold page and an A/B/C classification. |
+| `REPORT.md` | The measured before/after results, the ablation table, and the negative results. |
 
 ## Usage
 
@@ -36,7 +37,9 @@ SQLite scope under `$XDG_CACHE_HOME/powercontext/pdf_recall_eval/<doc>-<sha>/`.
 
 `--pdf` / `--document-id` let the same tool measure another FinanceBench filing
 (e.g. one of the other four documents in the hidden set) without touching the
-repository.
+repository. `REPORT.md` records the 29-question / 5-document run used to choose
+the shipped strategy: the extra four PDFs were downloaded to a cache outside the
+repository and are not committed.
 
 ## Metrics
 

@@ -39,11 +39,9 @@ import sys
 from pathlib import Path
 
 from powercontext.builtin.artifacts.memory import MemoryEntryInput
-from powercontext.builtin.artifacts.memory.models import MemoryCitation
 from powercontext.builtin.persistence.sqlite import SQLiteConfig
 from powercontext.builtin.runtime import (
     BuiltinConfig,
-    GetMemoryEntryRequest,
     SearchMemoryRequest,
     SubmitSourceObservation,
     open_builtin_contexts,
@@ -59,6 +57,7 @@ from powercontext.sources import pdf_pages as pdf_module
 from powercontext.sources.pdf_pages import (
     PDF_PAGE_SOURCE_DEFINITION,
     PDFDocumentInput,
+    _cached_index,
     _distilled_queries,
     _fuse,
     _list_entries,
@@ -69,9 +68,7 @@ from powercontext.sources.pdf_pages import (
 )
 from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY
 
-DEFAULT_PDF = (
-    "competition/challenges/source-03-pdf-retrieval/workload/public/pdfs/PEPSICO_2022_10K.pdf"
-)
+DEFAULT_PDF = "competition/challenges/source-03-pdf-retrieval/workload/public/pdfs/PEPSICO_2022_10K.pdf"
 DEFAULT_DATASET = "tools/pdf_recall_eval/proxy_dataset.jsonl"
 POOL_DEPTH = 100
 
@@ -99,17 +96,11 @@ def _cache_root() -> Path:
 async def _persist(directory: Path, observations) -> tuple[BuiltinConfig, str]:
     config = BuiltinConfig(database=SQLiteConfig(url=f"sqlite+aiosqlite:///{directory / 'sources.db'}"))
     async with open_builtin_runtime(config) as runtime:
-        scope = await runtime.scopes.create(
-            ScopeDraft(title="Sources", summary="Evidence", idempotency_key="sources")
-        )
+        scope = await runtime.scopes.create(ScopeDraft(title="Sources", summary="Evidence", idempotency_key="sources"))
         await runtime.ingestion.register(manifest_for_definition(PDF_PAGE_SOURCE_DEFINITION))
         for observation in observations:
-            await runtime.ingestion.submit(
-                SubmitSourceObservation(scope_id=scope.scope_id, observation=observation)
-            )
-        await runtime.ingestion.submit(
-            SubmitSourceObservation(scope_id=scope.scope_id, observation=observations[0])
-        )
+            await runtime.ingestion.submit(SubmitSourceObservation(scope_id=scope.scope_id, observation=observation))
+        await runtime.ingestion.submit(SubmitSourceObservation(scope_id=scope.scope_id, observation=observations[0]))
     async with open_builtin_runtime(config, candidate_pipeline=_EvidencePipeline()) as runtime:
         memory = runtime.memory.for_scope(scope.scope_id)
         for _ in range(len(observations) + 1):
@@ -146,20 +137,13 @@ async def _source_pages(config: BuiltinConfig, scope_id: str) -> dict[str, int]:
     async with open_builtin_contexts(config) as contexts:
         journal = await (await contexts.get(scope_id)).sources.journal.entries()
     return {
-        entry.source_ref.source_id: entry.source.projection(TEXT_EVIDENCE_PROJECTION_KEY)["metadata"][
-            "page_number"
-        ]
+        entry.source_ref.source_id: entry.source.projection(TEXT_EVIDENCE_PROJECTION_KEY)["metadata"]["page_number"]
         for entry in journal
     }
 
 
-async def _citation_pages(memory, citations, source_pages: dict[str, int]) -> list[int]:
-    pages: list[int] = []
-    for citation in citations:
-        entry = (await memory.get(GetMemoryEntryRequest(citation=citation))).entry
-        for reference in entry.sources:
-            pages.append(source_pages[reference.source_id])
-    return pages
+async def _citation_pages(memory, citations, entry_pages: dict[str, int]) -> list[int]:
+    return [entry_pages[citation.entry_id] for citation in citations]
 
 
 async def _entry_pages(memory, entries, source_pages) -> dict[str, int]:
@@ -177,13 +161,14 @@ def _rank_of(pages: list[int], page: int) -> int | None:
     return None
 
 
-async def _explain(memory, question: str, gold: set[int], source_pages, limit: int) -> dict:
+async def _explain(memory, question: str, gold: set[int], source_pages, entry_pages, limit: int) -> dict:
     memory_ref, entries = await _list_entries(memory)
-    entry_pages = await _entry_pages(memory, entries, source_pages)
     ranked = _rank_entries(memory_ref, entries, question) if entries else []
     searched = await _search_stage(memory, question, limit)
     depth = max(limit, POOL_DEPTH)
-    fused = _fuse(ranked, searched, depth)
+    index = _cached_index(memory_ref, entries) if entries else None
+    section_ranked = index.section_ranked(question) if index is not None else ()
+    fused = _fuse(ranked, searched, depth, section_ranked)
 
     local_pages = [entry_pages[item.citation.entry_id] for item in ranked]
     search_pages = [entry_pages[citation.entry_id] for citation in searched]
@@ -200,16 +185,7 @@ async def _explain(memory, question: str, gold: set[int], source_pages, limit: i
         except Exception:  # noqa: BLE001 - report a failed arm instead of hiding it.
             per_query[query] = None
             continue
-        hits = []
-        for hit in page.hits:
-            citation = MemoryCitation(
-                memory_ref=hit.memory_ref,
-                entry_id=hit.entry_id,
-                entry_version_id=hit.entry_version_id,
-            )
-            entry = (await memory.get(GetMemoryEntryRequest(citation=citation))).entry
-            hits.append(entry_pages[entry.entry_id])
-        per_query[query] = hits
+        per_query[query] = [entry_pages[hit.entry_id] for hit in page.hits]
 
     rows = []
     for page in sorted(gold):
@@ -224,19 +200,16 @@ async def _explain(memory, question: str, gold: set[int], source_pages, limit: i
             category = "C"
         else:
             category = "ok"
-        rows.append(
-            {
-                "page": page,
-                "local_rank": local_rank,
-                "search_rank": search_rank,
-                "fused_rank": fused_rank,
-                "per_query_rank": {
-                    query: (_rank_of(pages, page) if pages is not None else None)
-                    for query, pages in per_query.items()
-                },
-                "category": category,
-            }
-        )
+        rows.append({
+            "page": page,
+            "local_rank": local_rank,
+            "search_rank": search_rank,
+            "fused_rank": fused_rank,
+            "per_query_rank": {
+                query: (_rank_of(pages, page) if pages is not None else None) for query, pages in per_query.items()
+            },
+            "category": category,
+        })
     return {"rows": rows, "local_size": len(local_pages), "search_size": len(search_pages)}
 
 
@@ -262,10 +235,12 @@ async def run(args) -> dict:
     details = []
     async with open_builtin_runtime(config) as runtime:
         memory = runtime.memory.for_scope(scope_id)
+        _memory_ref, all_entries = await _list_entries(memory)
+        entry_pages = await _entry_pages(memory, all_entries, source_pages)
         for row in rows:
             gold = set(row["gold_pages"])
             citations = await search_pdf_pages(memory, row["question"], limit=args.limit)
-            pages = await _citation_pages(memory, citations, source_pages)
+            pages = await _citation_pages(memory, citations, entry_pages)
             hit = gold & set(pages)
             for k in recall:
                 recall[k] += len(gold & set(pages[:k])) / len(gold)
@@ -273,7 +248,7 @@ async def run(args) -> dict:
             reciprocal_rank += 1.0 / first if first else 0.0
             detail = {"id": row["id"], "question": row["question"], "gold_pages": sorted(gold), "got": pages}
             if args.explain:
-                explanation = await _explain(memory, row["question"], gold, source_pages, args.limit)
+                explanation = await _explain(memory, row["question"], gold, source_pages, entry_pages, args.limit)
                 detail["explain"] = explanation
                 for item in explanation["rows"]:
                     categories[item["category"]] += 1
