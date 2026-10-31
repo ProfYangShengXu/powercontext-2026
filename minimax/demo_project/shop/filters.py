@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from shop.models import Order, STATUSES, MEMBER_LEVELS
-from shop.pricing import total_cents
+from shop.models import Order
+
 
 def filter_orders(
     orders: list[Order],
@@ -16,33 +16,5 @@ def filter_orders(
     member_levels: set[str] | None = None,
     exclude_ids: set[str] | None = None,
 ) -> list[Order]:
-    """按状态、应付金额下限、会员等级与排除名单筛选订单，保持输入顺序。"""
-    if statuses is not None and not isinstance(statuses, set):
-        raise ValueError("statuses must be a set of strings")
-    if member_levels is not None and not isinstance(member_levels, set):
-        raise ValueError("member_levels must be a set of strings")
-    if exclude_ids is not None and not isinstance(exclude_ids, set):
-        raise ValueError("exclude_ids must be a set of strings")
-    
-    if statuses is not None:
-        statuses_set = set(statuses)
-        if not statuses_set.issubset(set(STATUSES)):
-            raise ValueError(f"Invalid statuses: {statuses_set - set(STATUSES)}")
-    if member_levels is not None:
-        member_levels_set = set(member_levels)
-        if not member_levels_set.issubset(set(MEMBER_LEVELS)):
-            raise ValueError(f"Invalid member_levels: {member_levels_set - set(MEMBER_LEVELS)}")
-    
-    filtered_orders = []
-    for order in orders:
-        if statuses is not None and order.status not in statuses_set:
-            continue
-        if min_total_cents is not None and total_cents(order) < min_total_cents:
-            continue
-        if member_levels is not None and order.member_level not in member_levels_set:
-            continue
-        if exclude_ids is not None and order.order_id in exclude_ids:
-            continue
-        filtered_orders.append(order)
-    
-    return filtered_orders
+    """按状态、应付金额下限、会员等级筛选订单，保持输入顺序。"""
+    return list(orders)
