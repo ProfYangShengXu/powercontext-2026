@@ -488,9 +488,12 @@ def _fuse(
 _INCOME_INTENT = frozenset(
     "revenue revenues sale sales income margin margins profit profits earnings ebitda "
     "expense expenses gross tax taxes net loss losses operating operation operations "
-    "restructuring".split()
+    "restructuring cogs eps".split()
 )
-_BALANCE_INTENT = frozenset("asset assets liability liabilities balance equity liquidity quick current".split())
+_BALANCE_INTENT = frozenset(
+    "asset assets liability liabilities balance equity liquidity quick current "
+    "payable payables inventory receivable receivables".split()
+)
 _CASHFLOW_INTENT = frozenset(
     "capex capital expenditure expenditures depreciation amortization investing financing".split()
 )
@@ -506,6 +509,19 @@ _BUSINESS_INTENT = frozenset(
 _ACCOUNTING_INTENT = frozenset("accounting fasb pronouncement pronouncements policy policies".split())
 
 
+# ``P&L`` is invisible to ``_TOKEN`` (which only keeps ``[a-z]+|\d+``): it becomes
+# the one-character tokens ``p`` and ``l``, both dropped by ``_rank_tokens``, so a
+# question that says "the P&L statement" loses every pointer to the income
+# statement.  Spell the abbreviation out before tokenizing the question.
+_P_AND_L = re.compile(r"\bp\s*&\s*l\b", re.IGNORECASE)
+
+
+def _normalized_question(question: str) -> str:
+    """Rewrite statement abbreviations that the tokenizer would otherwise lose."""
+
+    return _P_AND_L.sub(" income ", question)
+
+
 def _question_intents(raw_terms: Sequence[str]) -> frozenset[str]:
     """Classify which filing section a question is asking about, if any."""
 
@@ -515,6 +531,11 @@ def _question_intents(raw_terms: Sequence[str]) -> frozenset[str]:
         intents.add("income")
     if terms & _BALANCE_INTENT:
         intents.add("balance")
+    if terms & {"dpo", "dso", "dio"}:
+        # The cash-conversion-cycle metrics combine one income-statement line
+        # (COGS / revenue) with one balance-sheet line (payables / receivables /
+        # inventory), so both statement pages are legitimate evidence.
+        intents.update({"income", "balance"})
     if (terms & _CASHFLOW_INTENT) or {"cash", "flow"} <= terms:
         intents.add("cashflow")
     if terms & _SEGMENT_INTENT:
