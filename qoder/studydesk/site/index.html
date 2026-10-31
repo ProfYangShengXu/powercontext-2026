@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>拾遗 · 学习资料库与复习助手</title>
+  <meta name="description" content="拾遗：本地学习资料库 + 个性化复习助手。seekdb 负责混合检索，PowerContext 负责跨会话记忆。">
+  <meta name="color-scheme" content="light">
+  <meta property="og:title" content="拾遗 · 学习资料库与复习助手">
+  <meta property="og:description" content="seekdb 做混合检索，PowerContext 记薄弱点。问一句找回原文与出处，标记一次跨会话复习。">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#9c3b2b">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%239c3b2b'/%3E%3Ctext x='32' y='45' font-size='38' font-family='serif' fill='%23fbf3e8' text-anchor='middle'%3E%E6%8B%BE%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="拾遗首页">
+        <span class="seal" aria-hidden="true">拾</span>
+        <span class="brand-text"><strong>拾遗</strong><small>STUDYDESK</small></span>
+      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#features">功能</a>
+        <a href="#workbench">界面</a>
+        <a href="#architecture">技术分工</a>
+        <a href="#reproduce">复现</a>
+      </nav>
+      <a class="header-link" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>OceanBase 2026 大赛 · Qoder 赛道</p>
+          <h1><span class="hero-line">把散落的学习资料，</span><br class="hero-break">捡回成<span class="accent">可复习</span>的知识库。</h1>
+          <p class="lede">PDF、Markdown、TXT 不再是找不到的碎片。拾遗用 seekdb 做混合检索，用 PowerContext 记住你的薄弱点——问一句，找回原文与出处；标记一次，下次启动先提醒。</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">查看 GitHub 仓库 <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-ghost" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">本地复现指引</a>
+          </div>
+          <ul class="fact-list" aria-label="项目特点">
+            <li>本地运行</li>
+            <li>无需 LLM API</li>
+            <li>重启不丢状态</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual" aria-label="产品示意：检索结果与跨会话复习记忆">
+          <div class="memory-card">
+            <div class="mini-head">
+              <span class="mini-label">复习 · REVIEW</span>
+              <span class="live-chip">PowerContext</span>
+            </div>
+            <p class="memory-title">优先复习</p>
+            <div class="memory-item">
+              <span class="pin" aria-hidden="true"></span>
+              <p>薄弱点复习：提问「写放大」后，把《数据库笔记.md》标记为未掌握。</p>
+            </div>
+            <p class="memory-foot">重启后仍会召回</p>
+          </div>
+
+          <div class="demo-card">
+            <div class="demo-head">
+              <span class="demo-tag">检索 · SEARCH</span>
+              <span class="demo-mode">向量 + 全文 + RRF</span>
+            </div>
+            <div class="demo-query"><span>写放大</span><span class="demo-enter" aria-hidden="true">↵</span></div>
+            <div class="demo-result">
+              <div class="demo-source"><strong>数据库笔记.md</strong><span>第 2 块</span></div>
+              <p>同一个数据可能在内存表刷盘、层级合并和底层压缩中被<mark>反复重写</mark>。写放大越高，磁盘带宽消耗越大。</p>
+              <div class="demo-foot"><span>相关度距离 0.0325</span><span>全文 + 向量</span></div>
+            </div>
+            <p class="demo-note">样例数据 · 实际界面见下方</p>
+          </div>
+
+          <span class="stamp" aria-hidden="true">LOCAL<br>ONLY</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pain" aria-labelledby="pain-title">
+      <div class="wrap pain-grid">
+        <div class="pain-lead">
+          <p class="section-kicker">WHAT HURTS</p>
+          <h2 id="pain-title">学习资料的<br>两种常见失忆</h2>
+        </div>
+        <ol class="pain-list">
+          <li>
+            <span class="pain-index" aria-hidden="true">01</span>
+            <div>
+              <h3>看过，但找不到</h3>
+              <p>关键词搜索不认语义，答案明明在某个 PDF 或笔记里，却只能一页页翻。出处也没有留下来。</p>
+            </div>
+          </li>
+          <li>
+            <span class="pain-index" aria-hidden="true">02</span>
+            <div>
+              <h3>不会，但记不住</h3>
+              <p>复习凭感觉，上次卡住的地方没有形成记录。换一个会话、重启一次，一切又从头开始。</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section features" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="section-kicker">THREE MOVES</p>
+          <h2 id="features-title">三个动作，完成一次学习闭环</h2>
+          <p>从资料入库到下次复习，每一步都有明确的技术承接。</p>
+        </header>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-top">
+              <span class="feature-code">F1</span>
+              <span class="tech-chip chip-seekdb">seekdb</span>
+            </div>
+            <h3>资料导入</h3>
+            <p>指定 PDF、Markdown 或 TXT，自动切块、向量化并建立全文索引；来源文件名、位置与课程标签一并保留。</p>
+            <ul class="feature-list">
+              <li>≤500 字切块，50 字重叠</li>
+              <li>批量写入，重复导入覆盖旧片段</li>
+              <li>按课程标签过滤</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top">
+              <span class="feature-code">F2</span>
+              <span class="tech-chip chip-seekdb">seekdb</span>
+            </div>
+            <h3>混合检索</h3>
+            <p>自然语言提问，向量语义 + <code>$contains</code> 全文 + 课程过滤并行召回，再用 RRF 融合排序。</p>
+            <ul class="feature-list">
+              <li>结果带原文、出处与位置</li>
+              <li>相关度距离可核对</li>
+              <li>命中关键词高亮</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top">
+              <span class="feature-code">F3</span>
+              <span class="tech-chip chip-pc">PowerContext</span>
+            </div>
+            <h3>复习记忆</h3>
+            <p>标记「不懂 / 已掌握」会把学习状态写入 PowerContext；下次启动或检索前召回，生成优先复习建议。</p>
+            <ul class="feature-list">
+              <li>Source 采集 + Memory 显式写入</li>
+              <li>固定 scope，跨会话生效</li>
+              <li>服务不可用时给出明确错误</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section workbench" id="workbench" aria-labelledby="workbench-title">
+      <div class="wrap">
+        <header class="section-head section-head-split">
+          <div>
+            <p class="section-kicker">THE WORKBENCH</p>
+            <h2 id="workbench-title">导入、检索、复习，都在同一页</h2>
+          </div>
+          <p>中文单页、原生 HTML/CSS/JS；1280×720 下无横向滚动。M2 完成界面，M3 把左侧复习卡接入 PowerContext。</p>
+        </header>
+
+        <figure class="shot">
+          <div class="shot-bar" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <span class="shot-address">127.0.0.1:8001</span>
+          </div>
+          <img src="./assets/app-ui.png" width="2560" height="1440" loading="lazy" decoding="async" alt="拾遗单页界面：左侧是导入与优先复习，右侧检索「写放大」返回 5 条带出处和相关度距离的原文段落。">
+          <figcaption>样例数据：检索「写放大」命中《数据库笔记.md》；左侧 4 条薄弱点记忆由 PowerContext 跨会话召回。</figcaption>
+        </figure>
+
+        <div class="shot-notes" aria-label="界面要点">
+          <span><b>01</b> 混合检索</span>
+          <span><b>02</b> 出处与距离</span>
+          <span><b>03</b> 跨会话复习</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture" id="architecture" aria-labelledby="architecture-title">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="section-kicker">TWO CORES</p>
+          <h2 id="architecture-title">seekdb 管检索，PowerContext 管记忆</h2>
+          <p>两项技术同时使用，分工不重叠：所有资料只进 seekdb，所有学习者状态只进 PowerContext。</p>
+        </header>
+
+        <div class="lane-grid">
+          <article class="lane lane-seekdb">
+            <header class="lane-head">
+              <span class="lane-dot" aria-hidden="true"></span>
+              <div>
+                <h3>知识检索核心</h3>
+                <p>seekdb · embedded</p>
+              </div>
+            </header>
+            <ol class="flow">
+              <li><span>01</span>资料文件</li>
+              <li><span>02</span>切块 + 元数据</li>
+              <li><span>03</span>向量 + 全文索引</li>
+              <li class="flow-hot"><span>04</span>hybrid_search</li>
+              <li><span>05</span>段落 + 出处</li>
+            </ol>
+            <p class="lane-code">knn + $contains + where → RRF</p>
+            <p class="lane-note">数据落盘 <code>./data/seekdb</code>，重启后仍可检索。</p>
+          </article>
+
+          <article class="lane lane-pc">
+            <header class="lane-head">
+              <span class="lane-dot" aria-hidden="true"></span>
+              <div>
+                <h3>学习者状态核心</h3>
+                <p>PowerContext · HTTP API</p>
+              </div>
+            </header>
+            <ol class="flow">
+              <li><span>01</span>标记 / 提问</li>
+              <li><span>02</span>Source 采集</li>
+              <li><span>03</span>Memory 显式写入</li>
+              <li class="flow-hot"><span>04</span>context/prepare</li>
+              <li><span>05</span>优先复习建议</li>
+            </ol>
+            <p class="lane-code">scope=studydesk → artifact → recall</p>
+            <p class="lane-note">固定 scope + SQLite 持久化，跨应用重启生效。</p>
+          </article>
+        </div>
+
+        <aside class="no-dupe">
+          <strong>没有数据重复</strong>
+          <span>资料内容归 seekdb，学习行为归 PowerContext。应用只做编排，不另建一份影子库。</span>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section reproduce" id="reproduce" aria-labelledby="reproduce-title">
+      <div class="wrap reproduce-grid">
+        <div class="reproduce-copy">
+          <p class="section-kicker">RUN IT LOCALLY</p>
+          <h2 id="reproduce-title">在自己的机器上跑起来</h2>
+          <p class="reproduce-lede">源码、样例资料与一键验证脚本都在仓库里。按 README 准备本地嵌入模型与依赖，再分别启动 PowerContext 和拾遗。</p>
+          <ol class="steps">
+            <li>
+              <span aria-hidden="true">1</span>
+              <div><h3>准备模型与依赖</h3><code>bash scripts/seed_model.sh</code></div>
+            </li>
+            <li>
+              <span aria-hidden="true">2</span>
+              <div><h3>启动两个服务</h3><code>powercontext server run<br>python -m app.main</code></div>
+            </li>
+            <li>
+              <span aria-hidden="true">3</span>
+              <div><h3>一键验证 S1–S5</h3><code>bash scripts/run_verify.sh</code></div>
+            </li>
+          </ol>
+        </div>
+
+        <aside class="repo-card">
+          <p class="repo-label">CODE &amp; DOCS</p>
+          <h3>github.com/xihale/powercontext</h3>
+          <p>主工程位于 <code>qoder/studydesk/</code>，包含 FastAPI 服务、原生单页 UI、样例资料、M2–M4 开发留痕与验证日志。</p>
+          <div class="repo-actions">
+            <a class="btn btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">打开仓库 <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-outline" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">阅读 README <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="repo-foot">仓库公开可访问；运行数据与日志不随仓库分发。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section impact" id="impact" aria-labelledby="impact-title">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="section-kicker">IMPACT · PENDING</p>
+          <h2 id="impact-title">使用效果</h2>
+          <p>这一块刻意留白，等真实数据再补，不预填虚构指标。</p>
+        </header>
+
+        <div class="impact-grid">
+          <div class="impact-slot">
+            <span class="impact-value">—</span>
+            <span class="impact-label">Sites 访问量</span>
+            <p>发布后从 Qoder Sites 统计填入</p>
+          </div>
+          <div class="impact-slot">
+            <span class="impact-value">—</span>
+            <span class="impact-label">同学试用反馈</span>
+            <p>真实使用记录与问题清单</p>
+          </div>
+          <div class="impact-slot">
+            <span class="impact-value">—</span>
+            <span class="impact-label">复习提效对比</span>
+            <p>检索耗时 / 薄弱点回看次数</p>
+          </div>
+        </div>
+
+        <p class="impact-note"><span aria-hidden="true">↳</span> 数据收集后进入 <code>qoder/docs/impact/</code>，并更新本区块。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <a class="brand footer-brand" href="#top" aria-label="返回拾遗首页">
+        <span class="seal" aria-hidden="true">拾</span>
+        <span class="brand-text"><strong>拾遗</strong><small>STUDYDESK</small></span>
+      </a>
+      <p>本地优先的学习资料库与复习助手。资料留在本地，状态跨会话延续。</p>
+      <div class="footer-links">
+        <a href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">运行说明</a>
+        <a href="#top">返回顶部 ↑</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

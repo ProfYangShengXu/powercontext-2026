@@ -40,6 +40,7 @@ studydesk/
 ├── scripts/
 │   ├── seed_model.sh  从 ModelScope 预置 all-MiniLM-L6-v2 ONNX 模型
 │   └── run_verify.sh  S1-S5 一键验证（含自动重启）
+├── site/              展示站静态页（Qoder Sites 发布物料）
 ├── requirements.txt   锁定版本
 ├── data/              seekdb 持久化数据（运行时生成，gitignore）
 └── logs/              search_*.jsonl / memory_*.jsonl（运行时生成，gitignore）
@@ -198,6 +199,19 @@ tail -n 2 logs/memory_*.jsonl
 - 两者均被 `.gitignore` 忽略，运行时生成。
 - 验证截图、反馈/复习响应与记忆日志样例在 `../dev-records/M2-webui/`、`../dev-records/M3-memory/`。
 - M4 从零验收输出在 `../dev-records/M4-verify/verify.log`；同目录的 `search_sample.jsonl`、`memory_sample.jsonl` 是这次运行生成的检索与记忆日志样例。
+- M5 展示站截图与本地预览检查在 `../dev-records/M5-site/`。
+
+## 展示站（M5）
+
+`site/` 是提交用的静态单页展示站：项目一句话、F1/F2/F3 三张功能卡、界面截图、seekdb / PowerContext 分工、GitHub 与复现链接，以及留空的使用效果区。
+
+```bash
+cd site
+python3 -m http.server 8010 --bind 127.0.0.1
+# 打开 http://127.0.0.1:8010/
+```
+
+展示站不依赖应用进程，也不包含运行时数据。正式发布通过 Qoder Sites 完成，地址发布后补入 `../docs/SUBMISSION.md`。
 
 ## 配置
 
