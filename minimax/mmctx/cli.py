@@ -112,16 +112,25 @@ def read_source_factory(settings: Settings, rev: str | None = None):
 
 
 def _latest_apply(settings: Settings) -> dict[str, Any] | None:
-    """devlog 里最后一条成功的 apply 记录；state 用它对齐 run_id / applied_commit。"""
+    """devlog 里时间最晚的一条成功 apply 记录；state 用它对齐 run_id / applied_commit。
+
+    不能按文件名排序：run_id 可以是任意字符串（final / official / 时间戳），
+    文件名顺序与发生顺序无关，会把 state 写成上一轮提交。
+    """
     best: dict[str, Any] | None = None
+    best_ts = ""
     for path in sorted(settings.devlog_dir.glob("*.jsonl")):
         for line in path.read_text(encoding="utf-8").splitlines():
             try:
                 record = json.loads(line)
             except ValueError:
                 continue
-            if record.get("step") == "apply" and record.get("applied_commit"):
+            if record.get("step") != "apply" or not record.get("applied_commit"):
+                continue
+            ts = str(record.get("ts", ""))
+            if best is None or ts >= best_ts:
                 best = record
+                best_ts = ts
     return best
 
 
