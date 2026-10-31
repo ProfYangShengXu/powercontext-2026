@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3ede2">
+  <title>拾遗 · 学习资料库</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23a63a2b'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fff8ee' font-family='serif'%3E拾%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="seal" aria-hidden="true">拾</span>
+        <div class="brand-text">
+          <h1>拾遗</h1>
+          <p>把散落的学习资料，捡回成可检索的知识库</p>
+        </div>
+      </div>
+      <div class="status" title="数据保存在本项目 data/seekdb 目录">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>seekdb 本地模式</span>
+        <span class="status-divider" aria-hidden="true"></span>
+        <span class="status-addr">127.0.0.1:8001</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="side">
+        <section class="card import-card" aria-labelledby="import-title">
+          <div class="section-head">
+            <p class="eyebrow">资料 · IMPORT</p>
+            <h2 id="import-title">导入学习资料</h2>
+          </div>
+
+          <form id="import-form" class="import-form" novalidate>
+            <div class="field">
+              <label for="import-paths">目录或文件路径</label>
+              <textarea id="import-paths" name="paths" rows="2" spellcheck="false" placeholder="sample_data">sample_data</textarea>
+              <p class="hint">项目内相对路径，多个用逗号分隔；支持 md / txt / pdf。</p>
+            </div>
+            <div class="import-row">
+              <div class="field field-grow">
+                <label for="import-course">课程标签</label>
+                <input id="import-course" name="course" type="text" value="db" maxlength="64" autocomplete="off" placeholder="例如 oceanbase">
+              </div>
+              <button id="import-submit" class="btn btn-primary" type="submit">导入</button>
+            </div>
+          </form>
+
+          <div id="import-feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+          <ul id="import-files" class="file-list" hidden></ul>
+        </section>
+
+        <section class="card review-card" aria-labelledby="review-title">
+          <div class="section-head">
+            <p class="eyebrow">复习 · REVIEW</p>
+            <h2 id="review-title">优先复习</h2>
+          </div>
+          <div class="review-placeholder">
+            <span class="coming">M3 接入 PowerContext</span>
+            <p>标记「不懂」与提问记录会写进跨会话记忆；重启后，这里会挑出你最该回看的薄弱点。</p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="card ask-card" aria-labelledby="ask-title">
+        <div class="section-head ask-head">
+          <div>
+            <p class="eyebrow">检索 · SEARCH</p>
+            <h2 id="ask-title">问一句，找回原文</h2>
+          </div>
+          <span class="tech-chip">向量 + 全文 + RRF</span>
+        </div>
+
+        <form id="search-form" class="search-form" novalidate>
+          <label class="sr-only" for="search-q">你的问题</label>
+          <input id="search-q" class="query-input" name="q" type="text" autocomplete="off" placeholder="例如：为什么写多读少适合 LSM 结构？">
+          <label class="sr-only" for="search-course">课程过滤</label>
+          <input id="search-course" class="course-input" name="course" type="text" value="db" maxlength="64" autocomplete="off" placeholder="课程（留空为全部）">
+          <button id="search-submit" class="btn btn-primary search-btn" type="submit">检索</button>
+        </form>
+
+        <div id="examples" class="examples" aria-label="示例问题">
+          <button class="chip" type="button" data-query="写放大是什么">写放大是什么</button>
+          <button class="chip" type="button" data-query="死锁是怎么办">死锁是怎么办</button>
+          <button class="chip" type="button" data-query="为什么写多读少适合 LSM 结构">LSM 与写多读少</button>
+        </div>
+
+        <div class="result-meta-row">
+          <span id="results-meta">语义与关键词同时检索，结果按 RRF 融合排序。</span>
+          <span class="legend"><mark>命中词</mark></span>
+        </div>
+
+        <div id="results" class="results" aria-live="polite">
+          <div class="state-card">
+            <span class="state-mark" aria-hidden="true">寻</span>
+            <p class="state-title">还没有检索结果</p>
+            <p class="state-detail">先在左侧导入资料，或直接输入一个问题。结果会带上出处、位置与相关度距离。</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>拾遗 · 单机单用户 · 资料只存 seekdb，不调用外部模型</span>
+      <span>M2 · Web UI</span>
+    </footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+Paper reading notes: storage engines and distributed systems
+
+The LSM-tree paper starts from a simple observation: sequential writes are much cheaper than random writes on disk. It batches writes in memory and flushes sorted runs to disk, trading write amplification for high ingest throughput.
+
+The original LSM-tree design uses a logarithmic number of levels. Each level has a size limit, and a full level is merged into the next one. This structure bounds the number of runs inspected by a read while keeping background merge work predictable.
+
+LevelDB and RocksDB refine the idea with leveled compaction. Data is organized into sorted string tables, and each level has non-overlapping key ranges except for level zero, where runs may overlap. Compaction rewrites overlapping files to restore order.
+
+The Raft paper separates consensus into leader election, log replication, and safety. A leader appends client commands to its log and replicates them to followers. A command is committed once it is stored on a majority of servers, and the state machine applies committed entries in order.
+
+Raft makes the leader's log authoritative for conflicting entries. If a follower has uncommitted entries that conflict with the leader, those entries are overwritten. The election restriction ensures that only a candidate with an up-to-date log can win.
+
+Spanner combines replicated state machines with synchronized clocks. TrueTime exposes an uncertainty interval, and commit-wait ensures that timestamps respect real-time ordering. This supports externally consistent reads at global scale.
+
+The Dynamo paper focuses on availability and partition tolerance. Consistent hashing distributes keys, vector clocks track causal relationships, and hinted handoff plus read repair improve availability during failures.
+
+Vector clocks can detect concurrent updates, but they do not provide a total order. Dynamo resolves conflicts at the application level, for example by merging shopping carts, rather than forcing a single database-defined winner.
+
+A recurring lesson across these papers is that systems make explicit tradeoffs. Raft favors understandable invariants, Spanner pays with clock infrastructure, Dynamo favors availability, and LSM engines trade read and write amplification through compaction.
