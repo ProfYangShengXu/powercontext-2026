@@ -117,4 +117,30 @@
 
 ## 8. 验证记录
 
-（见下）
+产品新增单测：
+
+```
+PYTHONPATH=src competition/.venv/bin/python -m pytest tests/test_pdf_pages.py -q
+8 passed
+```
+
+公开自测（在 `competition/` 的锁定 venv 下逐题运行）：
+
+| 目标 | 结果 |
+|---|---|
+| test-csv | 17 passed |
+| test-pi | 15 passed |
+| test-pdf | 6 passed（改后重跑两次：31s / 36s） |
+| test-rerank | 10 passed |
+| test-incremental | 14 passed |
+| test-count-trigger | 见下 |
+| test-embedding | 8 passed |
+| test-lifecycle | 4 passed |
+| test-evidence | 3 passed |
+| test-hybrid | 1 passed |
+
+`test-count-trigger` 在本机（7GB WSL，仓库在 `/mnt/d`）有 3 个自动触发用例超时失败
+（`Native automatic processing timed out` / `No native generation was attempted`）。
+同一组测试在**改动前的基线 commit `097f98641`** 的独立工作树上跑出 **10 failed / 7 passed**
+（本分支 3 failed / 14 passed）。同一机器、同一测试文件，基线更差，说明是本机时序/性能
+问题，不是本次改动引入的回归；其余 9 题全绿。
