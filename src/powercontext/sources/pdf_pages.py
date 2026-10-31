@@ -743,11 +743,10 @@ class _PageIndex:
         plan = self.plan(question)
         if not plan.intents:
             return []
+        bm25 = [self.bm25(index, plan) for index in range(len(self.entries))]
         arms: list[list[int]] = []
         for intent in sorted(plan.intents):
-            hits = [
-                (self.bm25(index, plan), index) for index in range(len(self.entries)) if intent in self.sections[index]
-            ]
+            hits = [(bm25[index], index) for index in range(len(self.entries)) if intent in self.sections[index]]
             hits.sort(key=lambda item: (-item[0], item[1]))
             arms.append([index for _score, index in hits])
         ordered: list[int] = []
