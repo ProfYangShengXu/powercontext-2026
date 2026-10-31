@@ -1,0 +1,84 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "runtime": {
+    "device": "webgpu",
+    "dtype": "fp16"
+  },
+  "probe": {
+    "webgpuAvailable": true,
+    "fp16Supported": true,
+    "adapterLabel": "intel / xe-lpg",
+    "reason": null
+  },
+  "requested": {
+    "device": "webgpu",
+    "dtype": "fp16"
+  },
+  "modelSpec": {
+    "id": "Xenova/bge-small-zh-v1.5",
+    "dim": 512,
+    "pooling": "cls",
+    "dtypeByDevice": {
+      "webgpu": "fp16",
+      "wasm": "uint8"
+    },
+    "localModelPath": "/models/",
+    "allowRemoteModels": false
+  },
+  "lastQuery": {
+    "text": "WebGPU 用什么精度",
+    "topK": 10,
+    "collection": "gpu-mvwec6tn",
+    "vectorLength": 512,
+    "vectorHead": [
+      -0.02211,
+      0.02259,
+      0.00763,
+      0.02691,
+      -0.04248,
+      -0.05358
+    ],
+    "vectorChecksum": "d073a490b717607a"
+  },
+  "lastSql": "SELECT id, kb_id, document, metadata, _score FROM HYBRID_SEARCH('kb_chunk', '{\"knn\":{\"field\":\"embedding\",\"k\":40,\"query_vector\":\"[512 values omitted]\",\"filter\":{\"term\":{\"kb_id\":\"gpu-mvwec6tn\"}}},\"rank\":{\"rrf\":{\"rank_window_size\":40,\"rank_constant\":60}},\"size\":10,\"query\":{\"bool\":{\"must\":[{\"match\":{\"document\":\"WebGPU 用什么精度\"}}],\"filter\":[{\"term\":{\"kb_id\":\"gpu-mvwec6tn\"}}]}}}')",
+  "fetchLog": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8787/api/overview",
+      "status": 200,
+      "ms": 20
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:8787/api/ingest",
+      "status": 200,
+      "ms": 16
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:8787/api/publish",
+      "status": 200,
+      "ms": 521
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8787/api/overview",
+      "status": 200,
+      "ms": 5
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8787/api/overview",
+      "status": 200,
+      "ms": 4
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:8787/api/search",
+      "status": 200,
+      "ms": 19
+    }
+  ],
+  "capturedAt": "2026-10-31T12:55:39.259Z",
+  "backend": "webgpu"
+}

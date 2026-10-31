@@ -1,0 +1,4 @@
+PRIMARY	id	BTREE
+idx_fts	document	FULLTEXT
+idx_vec	embedding	VECTOR
+idx_kb	kb_id	BTREE

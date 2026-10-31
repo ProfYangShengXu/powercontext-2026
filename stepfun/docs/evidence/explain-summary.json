@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-31T12:50:54.608Z",
+  "databaseVersion": "5.7.25-OceanBase seekdb-v1.4.0.0",
+  "table": "kb_chunk",
+  "rows": 27,
+  "sampleQuery": "seekdb 混合检索",
+  "fusionPlanNodes": [
+    "VECTOR INDEX ADAPTIVE SCAN",
+    "HASH FULL OUTER JOIN",
+    "WINDOW FUNCTION",
+    "TOP-N SORT"
+  ],
+  "noFilterPlanNodes": [
+    "TEXT RETRIEVAL SCAN",
+    "VECTOR INDEX SCAN",
+    "HASH FULL OUTER JOIN",
+    "WINDOW FUNCTION",
+    "TOP-N SORT"
+  ],
+  "topHits": [
+    {
+      "id": "c0-d1-itest-mvwde7mi",
+      "kb": "itest-mvwde7mi",
+      "score": "0.0328"
+    },
+    {
+      "id": "c1-d2-itest-mvwde7mi",
+      "kb": "itest-mvwde7mi",
+      "score": "0.0161"
+    },
+    {
+      "id": "c3-d4-itest-mvwde7mi",
+      "kb": "itest-mvwde7mi",
+      "score": "0.0159"
+    },
+    {
+      "id": "c2-d3-itest-mvwde7mi",
+      "kb": "itest-mvwde7mi",
+      "score": "0.0156"
+    },
+    {
+      "id": "c5-d6-itest-mvwde7mi",
+      "kb": "itest-mvwde7mi",
+      "score": "0.0154"
+    }
+  ]
+}

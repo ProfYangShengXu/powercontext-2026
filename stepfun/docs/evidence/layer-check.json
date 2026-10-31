@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-10-31T12:57:45.743Z",
+  "importLineHash": "87f839368c09036ae9b068a2fe4fa254de5efe97007164292f55ca32b892a83f",
+  "stableFiles": [
+    "core/chunker.ts",
+    "core/knowledge-base.ts",
+    "core/presentation.ts",
+    "ports/index.ts"
+  ],
+  "checks": {
+    "externalImports": 0,
+    "techWordLeaks": 0,
+    "newSites": [
+      "bootstrap/index.ts"
+    ]
+  }
+}

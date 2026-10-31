@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-10-31T12:44:00Z",
+  "browser": "Microsoft Edge 156.0.4314.50 headless=new，--disable-gpu",
+  "backend": "WASM",
+  "dtype": "uint8",
+  "probe": { "webgpuAvailable": false, "fp16Supported": false, "reason": "requestAdapter() 返回 null" },
+  "badge": "WASM · uint8",
+  "model": "Xenova/bge-small-zh-v1.5",
+  "dim": 512,
+  "modelLoadMs": 5837,
+  "import": { "chunks": 1, "publishReadyMs": 708 },
+  "query": { "text": "seekdb 怎么融合全文和向量", "embedMs": 32.9, "dbSearchMs": 98.6, "endToEndMs": 131.7, "hits": 1 },
+  "searchSqlContains": ["HYBRID_SEARCH", "rrf", "kb_id"],
+  "engineSqlLength": 11409,
+  "note": "冷启动的 modelLoadMs 包含同源模型下载；第二次加载 4007ms（Cache Storage 命中）。"
+}

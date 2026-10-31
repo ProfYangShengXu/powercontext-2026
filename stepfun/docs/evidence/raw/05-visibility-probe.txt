@@ -1,0 +1,7 @@
+immediate t=+29ms rows=7 targetPos=-1
++50ms t=+84ms rows=7 targetPos=-1
++250ms t=+298ms rows=8 targetPos=1
+after-refresh t=+616ms rows=8 targetPos=1
++1s t=+1622ms rows=8 targetPos=1
+plain APPROXIMATE top5: [{"id":"live-1793448541651"},{"id":"live-1793451090684"},{"id":"f"},{"id":"d"},{"id":"c"}]
+plain exact top5: [{"id":"live-1793451090684","d":0},{"id":"live-1793448541651","d":0},{"id":"f","d":0.16732134363601503},{"id":"d","d":0.7425288569818517},{"id":"c","d":1.50735719754071}]

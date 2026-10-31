@@ -1,0 +1,50 @@
+
+### A before refresh vector d OK (6)
+[{"id":"d","_score":1},{"id":"f","_score":0.52942219},{"id":"c","_score":0.50800353},{"id":"b","_score":0.35820458},{"id":"e","_score":0.32366527},{"id":"a","_score":0.32101549}]
+
+### B refresh OK (n/a)
+{"fieldCount":0,"affectedRows":0,"insertId":0,"info":"","serverStatus":16418,"warningStatus":0,"stateChanges":{"systemVariables":{"_nlj_batching_enabled":"ON","sql_mode":"STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_AUTO_CREATE_USER","character_set_client":"utf8mb4","collation_database":"utf8mb4_general_ci"},"schema":null,"gtids":[],"trackStateChange":"1"},"changedRows":0}
+
+### B after refresh vector d OK (6)
+[{"id":"d","_score":1},{"id":"f","_score":0.52942219},{"id":"c","_score":0.50800353},{"id":"b","_score":0.35820458},{"id":"e","_score":0.32366527},{"id":"a","_score":0.32101549}]
+
+### C add scalar kb_id OK (n/a)
+{"fieldCount":0,"affectedRows":0,"insertId":0,"info":"","serverStatus":16418,"warningStatus":0,"stateChanges":{"systemVariables":{},"schema":null,"gtids":[],"trackStateChange":"1"},"changedRows":0}
+
+### C backfill kb_id OK (n/a)
+{"fieldCount":0,"affectedRows":5,"insertId":0,"info":"Rows matched: 5  Changed: 5  Warnings: 0","serverStatus":34,"warningStatus":0,"changedRows":5}
+
+### C backfill kb_id k2 OK (n/a)
+{"fieldCount":0,"affectedRows":1,"insertId":0,"info":"Rows matched: 1  Changed: 1  Warnings: 0","serverStatus":34,"warningStatus":0,"changedRows":1}
+
+### C add idx kb_id OK (n/a)
+{"fieldCount":0,"affectedRows":0,"insertId":0,"info":"","serverStatus":16418,"warningStatus":0,"stateChanges":{"systemVariables":{},"schema":null,"gtids":[],"trackStateChange":"1"},"changedRows":0}
+
+### D scalar filter k1 OK (5)
+[{"id":"a","kb_id":"k1","_score":"0.0328"},{"id":"e","kb_id":"k1","_score":"0.0161"},{"id":"b","kb_id":"k1","_score":"0.0159"},{"id":"c","kb_id":"k1","_score":"0.0156"},{"id":"d","kb_id":"k1","_score":"0.0154"}]
+
+### D2 scalar filter k2 OK (1)
+[{"id":"f","kb_id":"k2","_score":0.34058734}]
+
+### E1 execute prepared FAILED code=ER_PARSE_ERROR errno=1064 state=42000 msg=You have an error in your SQL syntax; check the manual that corresponds to your OceanBase version for the right syntax to use near '?, ?)' at line 1
+
+### E2 execute with filter FAILED code=ER_PARSE_ERROR errno=1064 state=42000 msg=You have an error in your SQL syntax; check the manual that corresponds to your OceanBase version for the right syntax to use near '?, ?)' at line 1
+
+### F explain OK (16)
+[{"Query Plan":"================================================================"},{"Query Plan":"|ID|OPERATOR           |NAME             |EST.ROWS|EST.TIME(us)|"},{"Query Plan":"----------------------------------------------------------------"},{"Query Plan":"|0 |SUBPLAN SCAN       |ANONYMOUS_VIEW1  |1       |68          |"},{"Query Plan":"|1 |└─VECTOR INDEX SCAN|kb_chunk(idx_vec)|1       |68          |"},{"Query Plan":"================================================================"},{"Query Plan":"Outputs & filters:"},{"Query Plan":"-------------------------------------"},{"Query Plan":"  0 - output([ANONYMOUS_VIEW1.id]), filter(nil), rowset=16"},{"Query Plan":"      access([ANONYMOUS_V
+
+--- plan contains ---
+TEXT RETRIEVAL SCAN: false
+VECTOR INDEX: true
+TABLE FULL SCAN: false
+HASH FULL OUTER JOIN: false
+WINDOW FUNCTION: false
+
+### G query only OK (1)
+[{"id":"a","_score":3.220757819815858}]
+
+### H knn no rank OK (3)
+[{"id":"a","_score":1},{"id":"e","_score":0.78987628},{"id":"b","_score":0.52693052}]
+
+### I rank_window_size 100 OK (6)
+[{"id":"a"},{"id":"e"},{"id":"b"},{"id":"c"},{"id":"f"},{"id":"d"}]

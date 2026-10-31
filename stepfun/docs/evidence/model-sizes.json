@@ -1,0 +1,81 @@
+{
+  "measuredAt": "2026-10-31T12:20:34.538Z",
+  "modelDir": ".models/bge-small-zh-v1.5",
+  "modelId": "Xenova/bge-small-zh-v1.5",
+  "accounting": "权重 ONNX + config.json + tokenizer.json + tokenizer_config.json + vocab.txt",
+  "commonBytes": 549748,
+  "rows": [
+    {
+      "dtype": "fp32",
+      "file": "model.onnx",
+      "label": "基线（未量化）",
+      "onnxBytes": 94851877,
+      "totalBytes": 95401625,
+      "onnxMiB": 90.46,
+      "totalMiB": 90.98,
+      "ratioVsFp32": 1
+    },
+    {
+      "dtype": "fp16",
+      "file": "model_fp16.onnx",
+      "label": "FP16（WebGPU）",
+      "onnxBytes": 47497427,
+      "totalBytes": 48047175,
+      "onnxMiB": 45.3,
+      "totalMiB": 45.82,
+      "ratioVsFp32": 1.99
+    },
+    {
+      "dtype": "int8",
+      "file": "model_int8.onnx",
+      "label": "INT8",
+      "onnxBytes": 23903394,
+      "totalBytes": 24453142,
+      "onnxMiB": 22.8,
+      "totalMiB": 23.32,
+      "ratioVsFp32": 3.9
+    },
+    {
+      "dtype": "uint8",
+      "file": "model_uint8.onnx",
+      "label": "UINT8（WASM）",
+      "onnxBytes": 23903404,
+      "totalBytes": 24453152,
+      "onnxMiB": 22.8,
+      "totalMiB": 23.32,
+      "ratioVsFp32": 3.9
+    },
+    {
+      "dtype": "q8",
+      "file": "model_quantized.onnx",
+      "label": "Q8（transformers.js 默认 wasm）",
+      "onnxBytes": 24010842,
+      "totalBytes": 24560590,
+      "onnxMiB": 22.9,
+      "totalMiB": 23.42,
+      "ratioVsFp32": 3.88
+    }
+  ],
+  "files": [
+    {
+      "file": "onnx/model.onnx",
+      "bytes": 94851877
+    },
+    {
+      "file": "onnx/model_fp16.onnx",
+      "bytes": 47497427
+    },
+    {
+      "file": "onnx/model_int8.onnx",
+      "bytes": 23903394
+    },
+    {
+      "file": "onnx/model_quantized.onnx",
+      "bytes": 24010842
+    },
+    {
+      "file": "onnx/model_uint8.onnx",
+      "bytes": 23903404
+    }
+  ]
+}

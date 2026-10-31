@@ -1,0 +1,60 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "runtime": {
+    "device": "wasm",
+    "dtype": "uint8"
+  },
+  "probe": {
+    "webgpuAvailable": false,
+    "fp16Supported": false,
+    "adapterLabel": "n/a",
+    "reason": "requestAdapter() 返回 null"
+  },
+  "requested": {
+    "device": "wasm",
+    "dtype": "uint8"
+  },
+  "modelSpec": {
+    "id": "Xenova/bge-small-zh-v1.5",
+    "dim": 512,
+    "pooling": "cls",
+    "dtypeByDevice": {
+      "webgpu": "fp16",
+      "wasm": "uint8"
+    },
+    "localModelPath": "/models/",
+    "allowRemoteModels": false
+  },
+  "lastQuery": {
+    "text": "seekdb 混合检索",
+    "topK": 10,
+    "collection": "demo-mvwdrn3o",
+    "vectorLength": 512,
+    "vectorHead": [
+      -0.08308,
+      -0.10087,
+      0.03332,
+      -0.01068,
+      -0.01628,
+      0.01569
+    ],
+    "vectorChecksum": "32062801240a2081"
+  },
+  "lastSql": "SELECT id, kb_id, document, metadata, _score FROM HYBRID_SEARCH('kb_chunk', '{\"knn\":{\"field\":\"embedding\",\"k\":40,\"query_vector\":\"[512 values omitted]\",\"filter\":{\"term\":{\"kb_id\":\"demo-mvwdrn3o\"}}},\"rank\":{\"rrf\":{\"rank_window_size\":40,\"rank_constant\":60}},\"size\":10,\"query\":{\"bool\":{\"must\":[{\"match\":{\"document\":\"seekdb 混合检索\"}}],\"filter\":[{\"term\":{\"kb_id\":\"demo-mvwdrn3o\"}}]}}}')",
+  "fetchLog": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:8787/api/overview",
+      "status": 200,
+      "ms": 73
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:8787/api/search",
+      "status": 200,
+      "ms": 23
+    }
+  ],
+  "capturedAt": "2026-10-31T12:55:40.034Z",
+  "backend": "wasm"
+}

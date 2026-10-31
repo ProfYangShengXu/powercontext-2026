@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-10-31T12:47:00Z",
+  "browser": "Microsoft Edge 156.0.4314.50 headless=new，--enable-unsafe-webgpu",
+  "backend": "WebGPU",
+  "dtype": "fp16",
+  "probe": { "webgpuAvailable": true, "fp16Supported": true, "adapterLabel": "intel / xe-lpg" },
+  "badge": "WebGPU · fp16",
+  "model": "Xenova/bge-small-zh-v1.5",
+  "dim": 512,
+  "modelLoadMs": 1610,
+  "modelLoadColdMs": 66389,
+  "import": { "chunks": 1, "publishReadyMs": 517 },
+  "query": { "text": "WebGPU 用什么精度", "embedMs": 250.3, "dbSearchMs": 20.5, "endToEndMs": 270.9, "hits": 1 },
+  "note": "headless Edge 的 WebGPU 走 ANGLE/软件路径，单批推理比 WASM 慢，不代表真实独显；本项只证明 WebGPU 探测、fp16 加载、降级判定与完整链路可用。"
+}
