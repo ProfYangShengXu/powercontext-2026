@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      生产取证用的硬闸：页面只能访问本站与 127.0.0.1:8787 的薄桥。
+      ORT 的 wasm 由 /ort/ 同源提供，模型由 /models/ 同源提供，
+      因此任何对 jsdelivr / huggingface.co 的出站请求都会被浏览器拦掉。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:8787 ws://127.0.0.1:5173; worker-src 'self' blob:;"
+    />
+    <title>阶跃星辰 · 端侧 AI 推理与 seekdb 混合检索</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="logo">▚</span>
+          <div>
+            <h1>端侧知识库</h1>
+            <p class="sub">浏览器本地向量化 · seekdb 混合检索（全文 + 向量 + RRF）</p>
+          </div>
+        </div>
+        <div class="status">
+          <span id="badge" class="badge badge-pending">初始化中…</span>
+          <span id="modelLabel" class="muted"></span>
+        </div>
+      </header>
+
+      <div id="banner" class="banner" hidden></div>
+
+      <main>
+        <section class="panel">
+          <h2><span class="step">1</span> 导入文本 → 本地向量化 → 写入 seekdb</h2>
+
+          <div class="row">
+            <label class="field grow">
+              <span>知识库</span>
+              <select id="kbSelect"></select>
+            </label>
+            <label class="field">
+              <span>新建知识库 id</span>
+              <input id="newKb" placeholder="例如 notes" autocomplete="off" />
+            </label>
+            <button id="addKbBtn" class="ghost">添加</button>
+          </div>
+
+          <div class="row">
+            <label class="field grow">
+              <span>选择 .txt / .md 文件（可多选）</span>
+              <input id="fileInput" type="file" multiple accept=".txt,.md,.markdown,text/plain,text/markdown" />
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field grow">
+              <span>或粘贴文本</span>
+              <textarea id="pasteText" rows="4" placeholder="把一段文字粘到这里…"></textarea>
+            </label>
+            <label class="field">
+              <span>来源名</span>
+              <input id="pasteName" value="paste.md" autocomplete="off" />
+            </label>
+          </div>
+
+          <div class="row actions">
+            <button id="importBtn" disabled>导入并发布索引</button>
+            <span id="importStage" class="muted"></span>
+          </div>
+          <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+          <div id="importStats" class="stats"></div>
+          <p class="hint">
+            切段、向量化在 Worker 完成；导入请求体里只有 <code>{id, text, vector[512], meta}</code>，
+            桥不再算任何向量。写库后必须 <code>publish</code>（seekdb <code>dbms_index_manager.refresh</code>
+            + 可见性探测），按钮才放开查询。
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2><span class="step">2</span> 混合检索（在 seekdb 内完成融合与截断）</h2>
+          <div class="row">
+            <label class="field grow">
+              <span>查询</span>
+              <input id="queryInput" placeholder="例如：seekdb 怎么做全文和向量的混合检索？" autocomplete="off" />
+            </label>
+            <label class="field narrow">
+              <span>返回条数</span>
+              <select id="topK">
+                <option>5</option>
+                <option selected>10</option>
+                <option>20</option>
+                <option>50</option>
+              </select>
+            </label>
+            <button id="searchBtn" disabled>检索</button>
+          </div>
+
+          <div id="timing" class="timing"></div>
+          <div id="empty" class="empty" hidden></div>
+          <ol id="results" class="results"></ol>
+
+          <details id="evidence" class="evidence" hidden>
+            <summary>库内单条 SQL 与执行计划（取证）</summary>
+            <pre id="sqlText" class="code"></pre>
+            <button id="engineSqlBtn" class="ghost">看引擎实际展开执行的 SQL</button>
+            <pre id="engineSqlText" class="code"></pre>
+          </details>
+        </section>
+      </main>
+
+      <footer id="diagPanel" class="diag" hidden>
+        <div class="diag-head">
+          <h3>诊断（取证）</h3>
+          <button id="exportDiag" class="ghost">导出诊断 JSON</button>
+        </div>
+        <pre id="diagText" class="code"></pre>
+      </footer>
+
+      <footer class="foot">
+        <span
+          >模型文件是下载来的（同源 <code>/models/</code>），但向量计算只发生在你的浏览器里；桥的依赖里没有
+          onnx / transformers，也没有 <code>/embed</code> 路由。</span
+        >
+      </footer>
+    </div>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

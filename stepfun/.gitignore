@@ -1,0 +1,17 @@
+# deps / build
+node_modules/
+.npm-cache/
+web-dist/
+
+# local model + ORT assets (npm run fetch-model regenerates them)
+.models/
+web/public/models/
+web/public/ort/
+
+# seekdb data dir (never commit a database)
+.seekdb-data/
+data/
+
+# scratch / logs
+.scratch/
+*.log

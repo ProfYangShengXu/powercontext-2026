@@ -1,0 +1,32 @@
+{
+  "name": "stepfun-onsite-kb",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "阶跃星辰 · 端侧 AI 推理与 seekdb 混合检索（浏览器向量化 + 单条 HYBRID_SEARCH）",
+  "scripts": {
+    "doctor": "node scripts/doctor.mjs",
+    "bridge": "tsx bridge/main.ts",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "fetch-model": "node scripts/fetch-model.mjs",
+    "measure-models": "node scripts/measure-models.mjs",
+    "check-layers": "node scripts/check-layers.mjs",
+    "test:integration": "node tests/integration.mjs",
+    "evidence": "node scripts/evidence.mjs",
+    "eval": "node eval/run-eval.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1",
+    "mysql2": "^3.14.3",
+    "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4",
+    "seekdb": "1.4.0"
+  },
+  "devDependencies": {
+    "onnxruntime-node": "1.21.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
