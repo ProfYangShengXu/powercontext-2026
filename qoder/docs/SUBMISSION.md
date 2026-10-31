@@ -7,20 +7,29 @@
 | # | 字段 | 填什么 | 完成前检查 |
 |---|---|---|---|
 | A1 | 项目网站网址 | Qoder Sites 发布的完整 URL | **无痕窗口**打开成功；站点可见范围=「任何人都可访问」 |
-| A2 | 代码仓库地址 | 私有仓 URL（评审可访问，或公开） | 评审能在 `qoder/studydesk/` 看到完整工程 |
-| A3 | Qoder 账号 UID | 设置 → 个人资料 → 编辑 里复制 | 与 Sites 站点归属一致 |
-| A4 | 分支 / Commit | `git rev-parse` 两个值（见 C5） | 基线自查 C1 通过 |
+| A2 | 代码仓库地址 | `https://github.com/xihale/powercontext`（公开） | **需先推送 `2026-competition-ecosystem`**；评审能在 `qoder/studydesk/` 看到完整工程 |
+| A3 | Qoder 账号 UID | 设置 → 个人资料 → 编辑 里复制 | 与 Sites 站点归属一致；待填 `dev-records/UID.txt` |
+| A4 | 分支 / Commit | 分支固定 `2026-competition-ecosystem`；Commit 以提交时 C5 输出为准（本文件更新后 SHA 会变） | 基线自查 C1 通过 |
 | A5 | 其余材料上传 | dev-records / 运行说明 / 验证样例 | 见 B |
 
 ## B. 仓库内材料（`qoder/`）
 
-- [ ] B1 `studydesk/` 完整源码，评审按 README 能从零跑通
-- [ ] B2 运行说明：环境、依赖版本、seekdb/PowerContext 部署接入、启动步骤、模型种子
-- [ ] B3 验证样例：`scripts/run_verify.sh` 全绿 + README 手动逐步版（含初始数据/输入/步骤/预期）
-- [ ] B4 技术结合证据：`logs/search_*.jsonl`（seekdb 检索记录）与 `logs/memory_*.jsonl`（PowerContext 读写记录）样例输出入库
-- [ ] B5 `dev-records/`：M0-M5 每阶段对话截图/录屏 + **Qoder 账号 UID 写在 dev-records/UID.txt**
+- [x] B1 `studydesk/` 完整源码，评审按 README 能从零跑通
+- [x] B2 运行说明：环境、依赖版本、seekdb/PowerContext 部署接入、启动步骤、模型种子（`studydesk/README.md`）
+- [x] B3 验证样例：`scripts/run_verify.sh` 全绿 + README 手动逐步版（含初始数据/输入/步骤/预期）；留痕 `dev-records/M4-verify/verify.log`
+- [x] B4 技术结合证据：`dev-records/M4-verify/search_sample.jsonl`（seekdb 检索记录）与 `memory_sample.jsonl`（PowerContext 读写记录）
+- [ ] B5 `dev-records/`：M0-M5 每阶段对话截图/录屏 + **Qoder 账号 UID 写在 dev-records/UID.txt**（M2–M5 留痕已入库，UID 与部分阶段录屏待补）
 - [ ] B6 使用效果材料（鼓励）：Sites 访问统计截图、同学试用记录、提效对比
-- [ ] B7 复用开源代码已注明来源与改动
+- [x] B7 复用开源代码已注明来源与改动（`studydesk/README.md`「依赖与来源」）
+
+## 发布与留痕（手动）
+
+1. Qoder → Sites → 创建站点，源目录选 `qoder/studydesk/site/`，部署。
+2. 可见范围选「任何人都可访问」。
+3. 无痕窗口打开站点 URL，确认无需登录即可访问。
+4. 截图 Sites 发布设置页（画面需包含可见范围选项），保存为 `dev-records/M5-site/sites-publish-settings.png`。
+5. 把完整 URL 填入上表 A1；UID 填入 `dev-records/UID.txt`。
+6. 推送 `2026-competition-ecosystem`，使 A2 的仓库与站内 README 链接可访问。
 
 ## C. 提交前自查（逐条执行）
 
@@ -31,16 +40,20 @@ cd <仓库根目录>
 git fetch r 2>/dev/null; git fetch origin 2>/dev/null
 git merge-base --is-ancestor r/2026-competition-ecosystem HEAD && echo OK || echo FAIL
 
-# C2 没有真实凭据（必须无输出）
-grep -rniE "sk-[a-zA-Z0-9]{20,}|api[_-]?key *= *[\"'][^\"']{16,}|password *= *[\"'][^\"']+|BEGIN (RSA|OPENSSH) PRIVATE KEY" qoder/ --exclude-dir=dev-records
+# C2 没有真实凭据（必须无输出；跳过被忽略的运行目录）
+grep -rniE "sk-[a-zA-Z0-9]{20,}|api[_-]?key *= *[\"'][^\"']{16,}|password *= *[\"'][^\"']+|BEGIN (RSA|OPENSSH) PRIVATE KEY" qoder/ \
+  --exclude-dir=dev-records --exclude-dir=.venv --exclude-dir=data --exclude-dir=logs --exclude-dir=__pycache__
 
-# C3 没有本地绝对路径泄漏到交付文件（必须无输出）
-grep -rniE "C:\\\\Users|/home/[a-z]+/|/Users/" qoder/studydesk/ qoder/docs/ qoder/scripts/ --exclude=SUBMISSION.md
+# C3 没有本地绝对路径泄漏到交付文件（必须无输出；跳过被忽略的运行目录）
+grep -rniE "C:\\\\Users|/home/[a-z]+/|/Users/" qoder/studydesk/ qoder/docs/ qoder/scripts/ \
+  --exclude=SUBMISSION.md --exclude-dir=.venv --exclude-dir=data --exclude-dir=logs --exclude-dir=__pycache__
 
 # C4 Sites 可访问性（人工）：无痕窗口打开 A1 的网址，能看到项目页
 # C5 要填到平台的两个值
 echo "SHA: $(git rev-parse HEAD)"; echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
 ```
+
+2026-10-31 自查记录：C1 `OK`；C2、C3 无输出。C4 待站点发布后执行。
 
 ## D. 提交后
 

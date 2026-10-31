@@ -232,3 +232,10 @@ export POWERCONTEXT_BASE_URL=http://127.0.0.1:8000
 - 中文检索以本地 MiniLM 语义 + 全文关键词兜底；示例数据已验证，换语料需自行评估效果。
 - 复习建议受 PowerContext `context/prepare` 的 `max_bytes=4000` 限制；记忆很多时只返回最相关的一批条目，页面内可滚动。
 - 重新导入同一课程/文件采用「先删旧块、再批量写入」，不是跨文件事务；导入失败时该文件可能暂时缺块，重试即可。
+
+## 依赖与来源
+
+- 应用代码（`app/`、`static/`、`scripts/`）为本项目原创，未复制或改写第三方项目源码。
+- 第三方依赖按 `requirements.txt` 从 PyPI 安装：FastAPI、uvicorn、pypdf、pyseekdb，版本见上；嵌入模型 all-MiniLM-L6-v2 由 pyseekdb 从 ModelScope 下载，未入库。
+- PowerContext 以本地服务方式接入（CLI 安装），不修改其源码。
+- `sample_data/` 三个样例文件为本项目自写，用于复现检索与复习闭环，不含第三方版权内容。
