@@ -94,3 +94,73 @@ def test_search_stage_keeps_fts_when_no_hybrid_capability_exists() -> None:
 
     assert citations
     assert set(memory.modes) == {"fts"}
+
+
+# --------------------------------------------------------------------------- #
+# Index construction and reranker port
+# --------------------------------------------------------------------------- #
+
+
+class _Entry:
+    def __init__(self, entry_id: str) -> None:
+        self.entry_id = entry_id
+        self.entry_version_id = f"{entry_id}-v1"
+        self.memory_artifact_id = "memory"
+        self.created_in_revision = 1
+
+
+class _Record:
+    def __init__(self, entry_id: str) -> None:
+        self.entry = _Entry(entry_id)
+
+    @property
+    def citation(self):
+        from powercontext.artifacts import ArtifactRef
+
+        return type(
+            "Citation",
+            (),
+            {
+                "memory_ref": ArtifactRef(family="memory", artifact_id="memory", revision=1),
+                "entry_id": self.entry.entry_id,
+                "entry_version_id": self.entry.entry_version_id,
+            },
+        )()
+
+
+def test_split_passages_covers_the_page_tail() -> None:
+    from powercontext.sources.pdf_pages import _split_passages
+
+    tokens = [str(index) for index in range(120)]
+    passages = _split_passages(tokens)
+    covered = {token for passage in passages for token in passage}
+    assert covered == set(tokens)  # every token, including 90..119, is scored
+    assert passages[-1][-1] == "119"
+
+
+def test_index_cache_key_is_content_sensitive() -> None:
+    from powercontext.sources.pdf_pages import _index_cache_key
+
+    first = [_Record("a"), _Record("b")]
+    second = [_Record("c"), _Record("d")]
+    assert _index_cache_key(None, first) != _index_cache_key(None, second)
+
+
+def test_noop_reranker_returns_the_fused_order() -> None:
+    from powercontext.sources.pdf_pages import NoopPDFPageReranker, _PageIndex
+
+    index = _PageIndex([], [], [], [], [])
+    candidates = [_Record("a").citation, _Record("b").citation]
+    assert NoopPDFPageReranker().rerank("q", index, candidates) == candidates
+
+
+def test_rerank_degrades_to_noop_when_the_reranker_raises(monkeypatch) -> None:
+    from powercontext.sources import pdf_pages as module
+
+    class _Broken:
+        def rerank(self, question, index, candidates):
+            raise RuntimeError("model unavailable")
+
+    monkeypatch.setattr(module, "_select_reranker", lambda: _Broken())
+    candidates = [_Record("a").citation, _Record("b").citation]
+    assert module._rerank("q", module._PageIndex([], [], [], [], []), candidates) == candidates

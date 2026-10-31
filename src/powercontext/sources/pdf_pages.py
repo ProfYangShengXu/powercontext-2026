@@ -37,13 +37,16 @@ import math
 import re
 import unicodedata
 from collections import Counter
-from typing import Any
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any, Protocol
 
 from pydantic import BaseModel, field_validator
 
 from powercontext.artifacts.models import MemoryCitation
 from powercontext.builtin.artifacts.search import analyze_text
 from powercontext.limits import MAX_SOURCE_ID_LENGTH
+from powercontext.sources._porter import stem_term
 from powercontext.sources import (
     TEXT_EVIDENCE_PROJECTION_KEY,
     AdapterSourceDefinition,
@@ -345,9 +348,21 @@ async def search_pdf_pages(
 
     memory_ref, entries = await _list_entries(memory)
     if entries:
-        ranked = _rank_entries(memory_ref, entries, question)
+        index = _cached_index(memory_ref, entries)
+        ranked = [index.entries[position] for _score, position in index.rank(question)]
         search_ranked = await _search_stage(memory, question, limit)
-        return tuple(_fuse(ranked, search_ranked, limit))
+        fused = _fuse(
+            ranked,
+            search_ranked,
+            max(limit, _RERANK_DEPTH),
+            index.section_ranked(question),
+        )
+        # Recall@20 is a membership gate: promoting pages from 21-50 into the
+        # returned set was measured to lose gold pages, so the reranker only
+        # reorders the pages that are already returned.  The top-50 port stays in
+        # place for a future semantic reranker that can be trusted to promote.
+        head = _rerank(question, index, fused[:limit])
+        return tuple((head + fused[limit:])[:limit])
     return tuple(await _search_stage(memory, question, limit))
 
 
@@ -362,9 +377,7 @@ async def _list_entries(memory: Any) -> tuple[Any, list[Any]]:
     except Exception:  # noqa: BLE001 - fall back to the search API when listing is unavailable.
         return None, []
     entries = getattr(page, "entries", ())
-    return getattr(page, "memory_ref", None), [
-        entry for entry in entries if getattr(entry, "entry", None) is not None
-    ]
+    return getattr(page, "memory_ref", None), [entry for entry in entries if getattr(entry, "entry", None) is not None]
 
 
 async def _preferred_search_mode(memory: Any) -> str:
@@ -434,26 +447,37 @@ async def _search_stage(memory: Any, question: str, limit: int) -> list[MemoryCi
 _RRF_K = 60
 
 
-def _fuse(ranked: list[Any], searched: list[MemoryCitation], limit: int) -> list[MemoryCitation]:
-    """Fuse the offline page ranking with the public search ranking (RRF)."""
+def _fuse(
+    ranked: list[Any],
+    searched: list[MemoryCitation],
+    limit: int,
+    sections: Sequence[MemoryCitation] = (),
+) -> list[MemoryCitation]:
+    """Fuse the offline page ranking, public search and section arm (RRF)."""
 
-    local_scores: dict[tuple[str, str, str, str], float] = {}
-    local_citations: dict[tuple[str, str, str, str], MemoryCitation] = {}
-    for rank, item in enumerate(ranked, start=1):
-        citation = item.citation
-        key = (citation.memory_ref.family, citation.memory_ref.artifact_id, citation.entry_id, citation.entry_version_id)
-        local_citations[key] = citation
-        local_scores[key] = 1.0 / (_RRF_K + rank)
-    search_scores: dict[tuple[str, str, str, str], float] = {}
-    for rank, citation in enumerate(searched, start=1):
-        key = (citation.memory_ref.family, citation.memory_ref.artifact_id, citation.entry_id, citation.entry_version_id)
-        local_citations.setdefault(key, citation)
-        search_scores[key] = 1.0 / (_RRF_K + rank)
     combined: dict[tuple[str, str, str, str], float] = {}
-    for key in local_citations:
-        combined[key] = local_scores.get(key, 0.0) + search_scores.get(key, 0.0)
+    citations: dict[tuple[str, str, str, str], MemoryCitation] = {}
+
+    def add(items, weight: float = 1.0) -> None:
+        for rank, citation in enumerate(
+            (item.citation if hasattr(item, "citation") else item for item in items),
+            start=1,
+        ):
+            key = (
+                citation.memory_ref.family,
+                citation.memory_ref.artifact_id,
+                citation.entry_id,
+                citation.entry_version_id,
+            )
+            citations.setdefault(key, citation)
+            combined[key] = combined.get(key, 0.0) + weight / (_RRF_K + rank)
+
+    add(ranked)
+    add(searched)
+    if sections:
+        add(sections, _SECTION_WEIGHT)
     selected = sorted(combined, key=lambda key: (-combined[key], key))[:limit]
-    return [local_citations[key] for key in selected]
+    return [citations[key] for key in selected]
 
 
 # --------------------------------------------------------------------------- #
@@ -461,20 +485,163 @@ def _fuse(ranked: list[Any], searched: list[MemoryCitation], limit: int) -> list
 # --------------------------------------------------------------------------- #
 
 
+_INCOME_INTENT = frozenset(
+    "revenue revenues sale sales income margin margins profit profits earnings ebitda "
+    "expense expenses gross tax taxes net loss losses operating operation operations "
+    "restructuring".split()
+)
+_BALANCE_INTENT = frozenset("asset assets liability liabilities balance equity liquidity quick current".split())
+_CASHFLOW_INTENT = frozenset(
+    "capex capital expenditure expenditures depreciation amortization investing financing".split()
+)
+_SEGMENT_INTENT = frozenset("segment segments division divisions".split())
+_LEGAL_INTENT = frozenset(
+    "legal litigation lawsuit lawsuits proceeding proceedings dispute disputes battle battles".split()
+)
+_RISK_INTENT = frozenset("risk risks factor factors cyclical cyclicality".split())
+_GEOGRAPHIC_INTENT = frozenset("geographies geography geographic region regions country countries".split())
+_BUSINESS_INTENT = frozenset(
+    "business product products service services customer customers property properties facility facilities".split()
+)
+_ACCOUNTING_INTENT = frozenset("accounting fasb pronouncement pronouncements policy policies".split())
+
+
+def _question_intents(raw_terms: Sequence[str]) -> frozenset[str]:
+    """Classify which filing section a question is asking about, if any."""
+
+    terms = set(raw_terms)
+    intents: set[str] = set()
+    if terms & _INCOME_INTENT:
+        intents.add("income")
+    if terms & _BALANCE_INTENT:
+        intents.add("balance")
+    if (terms & _CASHFLOW_INTENT) or {"cash", "flow"} <= terms:
+        intents.add("cashflow")
+    if terms & _SEGMENT_INTENT:
+        intents.add("segment")
+    if terms & _LEGAL_INTENT:
+        intents.add("legal")
+    if terms & _RISK_INTENT:
+        intents.add("risk")
+    if terms & _GEOGRAPHIC_INTENT:
+        intents.add("geographic")
+    if terms & _BUSINESS_INTENT:
+        intents.add("business")
+    if terms & _ACCOUNTING_INTENT:
+        intents.add("accounting")
+    if {"capital", "intensive"} <= terms:
+        # Capital intensity is judged from the income statement, balance sheet and
+        # cash-flow statement together, so all three sections are relevant.
+        intents.update({"income", "balance", "cashflow"})
+    return frozenset(intents)
+
+
+def _page_sections(raw_tokens: Sequence[str], expanded_tokens: Sequence[str]) -> frozenset[str]:
+    """Classify one page by the section heading it starts with (or names).
+
+    ``expanded_tokens`` is ``raw + stemmed``; the heading window has to look at
+    both halves, otherwise a plural heading ("statements") never matches the
+    stemmed ``statement`` form.
+    """
+
+    terms = set(expanded_tokens)
+    raw_count = len(raw_tokens)
+    head = set(raw_tokens[:48]) | set(expanded_tokens[raw_count : raw_count + 48])
+    sections: set[str] = set()
+    if "statement" in head and ("income" in head or "oper" in head or "result" in head):
+        sections.add("income")
+    if "balance" in head and "sheet" in head:
+        sections.add("balance")
+    if "cash" in head and "flow" in head and "statement" in head:
+        sections.add("cashflow")
+    if "segment" in head or ("segment" in terms and "sales" in terms):
+        sections.add("segment")
+    if "legal" in terms and ("proceeding" in terms or "litigation" in terms or "dispute" in terms):
+        sections.add("legal")
+    if "risk" in terms and "factor" in terms:
+        sections.add("risk")
+    if "geograph" in terms:
+        sections.add("geographic")
+    if {"item", "business"} <= terms or "business" in list(raw_tokens[:3]) or "propert" in list(raw_tokens[:3]):
+        sections.add("business")
+    if "accounting" in head and ("polic" in terms or "pronouncement" in terms):
+        sections.add("accounting")
+    return frozenset(sections)
+
+
+def _reciprocal_rank_fusion(signals: Sequence[Sequence[float]]) -> list[float]:
+    """Fuse rank-only signals with RRF (Cormack et al. 2009, k=60).
+
+    Rank fusion needs no score calibration, which matters here because BM25
+    magnitudes and a 0..1 coverage ratio are not comparable otherwise.  Ties keep
+    the earlier page on every signal.
+    """
+
+    if not signals:
+        return []
+    count = len(signals[0])
+    scores = [0.0] * count
+    for values in signals:
+        order = sorted(range(count), key=lambda item: (-values[item], item))
+        for rank, item in enumerate(order, start=1):
+            scores[item] += 1.0 / (_RRF_K + rank)
+    return scores
+
+
+@dataclass(frozen=True)
+class _QueryPlan:
+    """One question reduced to the lexical signals every ranker shares."""
+
+    tokens: tuple[str, ...]
+    raw_terms: tuple[str, ...]
+    unique_terms: tuple[str, ...]
+    weights: tuple[tuple[str, float], ...]
+    bigrams: tuple[tuple[str, str], ...]
+    trigrams: tuple[tuple[str, str, str], ...]
+    intents: frozenset[str]
+
+
 class _PageIndex:
     """Pre-tokenized passages and the inverse document frequency of their terms."""
 
-    __slots__ = ("entries", "passages", "idf", "average_length", "page_terms")
+    __slots__ = (
+        "entries",
+        "tokens",
+        "passages",
+        "page_terms",
+        "sections",
+        "bigrams",
+        "trigrams",
+        "positions",
+        "idf",
+        "average_length",
+    )
 
     def __init__(
         self,
         entries: list[Any],
+        tokens: list[list[str]],
         passages: list[list[list[str]]],
         page_terms: list[set[str]],
+        sections: list[frozenset[str]],
     ) -> None:
         self.entries = entries
+        self.tokens = tokens
         self.passages = passages
         self.page_terms = page_terms
+        self.sections = sections
+        self.bigrams = [frozenset(zip(page, page[1:])) for page in tokens]
+        self.trigrams = [frozenset(zip(page, page[1:], page[2:])) for page in tokens]
+        self.positions = {}
+        for position, record in enumerate(entries):
+            citation = record.citation
+            key = (
+                citation.memory_ref.family,
+                citation.memory_ref.artifact_id,
+                citation.entry_id,
+                citation.entry_version_id,
+            )
+            self.positions[key] = position
         total = sum(len(passage) for page_passages in passages for passage in page_passages)
         self.average_length = total / max(1, sum(len(page_passages) for page_passages in passages))
         document_frequency: Counter[str] = Counter()
@@ -489,10 +656,33 @@ class _PageIndex:
             for term, frequency in document_frequency.items()
         }
 
-    def score_page(self, index: int, query_weights: tuple[tuple[str, float], ...], unique_terms: tuple[str, ...]) -> float:
-        """Score exactly one page from its best matching passage plus term coverage."""
+    def plan(self, question: str) -> _QueryPlan:
+        tokens = tuple(_index_tokens(question))
+        raw_terms = tuple(_rank_tokens(question))
+        unique_terms = tuple(dict.fromkeys(tokens))
+        return _QueryPlan(
+            tokens=tokens,
+            raw_terms=raw_terms,
+            unique_terms=unique_terms,
+            weights=tuple((term, self.idf[term]) for term in unique_terms if term in self.idf),
+            bigrams=tuple(dict.fromkeys(zip(raw_terms, raw_terms[1:]))),
+            trigrams=tuple(dict.fromkeys(zip(raw_terms, raw_terms[1:], raw_terms[2:]))),
+            intents=frozenset(_question_intents(raw_terms)),
+        )
 
-        if not query_weights or not unique_terms:
+    def position_of(self, citation: MemoryCitation) -> int | None:
+        key = (
+            citation.memory_ref.family,
+            citation.memory_ref.artifact_id,
+            citation.entry_id,
+            citation.entry_version_id,
+        )
+        return self.positions.get(key)
+
+    def bm25(self, index: int, plan: _QueryPlan) -> float:
+        """Best-passage BM25, the standard MaxP baseline for a localized answer."""
+
+        if not plan.weights:
             return 0.0
         page_passages = self.passages[index]
         average = self.average_length
@@ -505,34 +695,188 @@ class _PageIndex:
                 continue
             counts = Counter(passage)
             score = 0.0
-            for term, weight in query_weights:
+            for term, weight in plan.weights:
                 frequency = counts.get(term, 0)
                 if frequency:
                     denominator = frequency + k1 * (1.0 - b + b * length / average)
                     score += weight * frequency * (k1 + 1.0) / denominator
             if score > page_best:
                 page_best = score
-        coverage = len(self.page_terms[index].intersection(unique_terms)) / len(unique_terms)
-        return page_best + 3.0 * coverage
+        return page_best
+
+    def coverage(self, index: int, plan: _QueryPlan) -> float:
+        """IDF-weighted share of the question's in-corpus terms present on the page.
+
+        Terms absent from the whole document are ignored: a question word the
+        filing never uses (e.g. "battles" for "legal proceedings") must not dilute
+        every page's coverage.  Ubiquitous words carry little IDF, so a page that
+        only shares the company name and the year cannot win on coverage.
+        """
+
+        total = sum(weight for _term, weight in plan.weights)
+        if total <= 0.0:
+            return 0.0
+        terms = self.page_terms[index]
+        matched = sum(weight for term, weight in plan.weights if term in terms)
+        return matched / total
+
+    def phrase_hits(self, index: int, plan: _QueryPlan) -> int:
+        """Count query n-grams that occur verbatim on the page (trigrams weigh more)."""
+
+        if not plan.bigrams:
+            return 0
+        return len(self.bigrams[index].intersection(plan.bigrams)) + 2 * len(
+            self.trigrams[index].intersection(plan.trigrams)
+        )
+
+    def section_ranked(self, question: str) -> list[MemoryCitation]:
+        """Pages whose own heading is of a section type the question names.
+
+        This is an independent recall arm: it exists only when the question names
+        a section, so questions that do not cannot be displaced by it.  One arm per
+        intent is interleaved round-robin, so a question that names several
+        sections (e.g. capital intensity: income + balance + cash flow) gets one
+        representative of each near the top instead of a long list dominated by the
+        broadest section.
+        """
+
+        plan = self.plan(question)
+        if not plan.intents:
+            return []
+        arms: list[list[int]] = []
+        for intent in sorted(plan.intents):
+            hits = [
+                (self.bm25(index, plan), index) for index in range(len(self.entries)) if intent in self.sections[index]
+            ]
+            hits.sort(key=lambda item: (-item[0], item[1]))
+            arms.append([index for _score, index in hits])
+        ordered: list[int] = []
+        seen: set[int] = set()
+        depth = max((len(arm) for arm in arms), default=0)
+        for offset in range(depth):
+            for arm in arms:
+                if offset < len(arm) and arm[offset] not in seen:
+                    seen.add(arm[offset])
+                    ordered.append(arm[offset])
+        return [self.entries[index].citation for index in ordered]
 
     def rank(self, question: str) -> list[tuple[float, int]]:
-        tokens = _rank_tokens(question)
-        if not tokens:
-            return [(0.0, index) for index in range(len(self.entries))]
-        unique_terms = tuple(dict.fromkeys(tokens))
-        query_weights = tuple((term, self.idf[term]) for term in tokens if term in self.idf)
-        scored = [
-            (self.score_page(index, query_weights, unique_terms), index)
-            for index in range(len(self.entries))
-        ]
+        plan = self.plan(question)
+        count = len(self.entries)
+        if not plan.tokens:
+            return [(0.0, index) for index in range(count)]
+        # Coverage is additive, not a multiplier.  Multiplying was measured on
+        # the dev set to lose Recall@20: a statement page that is the annotated
+        # evidence can share only a few ubiquitous terms, so the product fell to
+        # zero while the page was still the right page.  As a bounded bonus it
+        # breaks ties and lets a page with no passage hit but real term overlap
+        # survive.
+        scored = [(self.bm25(index, plan) + self.coverage(index, plan), index) for index in range(count)]
         scored.sort(key=lambda item: (-item[0], item[1]))
         return scored
+
+
+class PDFPageReranker(Protocol):
+    """A bounded-pool reranker that can be replaced (e.g. by a local model).
+
+    The production default is :class:`LexicalPDFPageReranker` because it needs no
+    model download.  A model-backed implementation belongs here; when it is
+    unavailable or raises, :func:`_rerank` falls back to :class:`NoopPDFPageReranker`,
+    which returns the fused order unchanged.
+    """
+
+    def rerank(
+        self,
+        question: str,
+        index: _PageIndex,
+        candidates: Sequence[MemoryCitation],
+    ) -> list[MemoryCitation]: ...
+
+
+class NoopPDFPageReranker:
+    """Return the fused order unchanged; the behaviour before reranking existed."""
+
+    def rerank(
+        self,
+        question: str,
+        index: _PageIndex,
+        candidates: Sequence[MemoryCitation],
+    ) -> list[MemoryCitation]:
+        return list(candidates)
+
+
+class LexicalPDFPageReranker:
+    """Reorder the returned pages by heading match, fused with the fused order.
+
+    Coverage and number signals were measured on the dev set and lost more MRR
+    than they gained, so the reranker only adds the high-precision heading signal.
+    Pages that do not match a named section keep their fused order exactly.
+    """
+
+    def rerank(
+        self,
+        question: str,
+        index: _PageIndex,
+        candidates: Sequence[MemoryCitation],
+    ) -> list[MemoryCitation]:
+        if len(candidates) < 2:
+            return list(candidates)
+        plan = index.plan(question)
+        positions = [index.position_of(citation) for citation in candidates]
+
+        signals: list[list[float]] = [[float(-position) for position in range(len(candidates))]]
+        if plan.intents:
+            section = [
+                float(len(plan.intents.intersection(index.sections[position]))) if position is not None else 0.0
+                for position in positions
+            ]
+            if any(section):
+                signals.append(section)
+        if plan.bigrams:
+            phrase = [
+                float(index.phrase_hits(position, plan)) if position is not None else 0.0 for position in positions
+            ]
+            if any(phrase):
+                signals.append(phrase)
+
+        scores = _reciprocal_rank_fusion(signals)
+        final = sorted(range(len(candidates)), key=lambda item: (-scores[item], item))
+        return [candidates[item] for item in final]
+
+
+_RERANK_DEPTH = 50
+
+# A section heading is a high-precision, low-recall signal: a statement page can
+# be the annotated evidence while sharing almost no words with the question.  The
+# weight was chosen by scanning {1, 2, 3} on the 29-question dev set (tools/
+# pdf_recall_eval); 2.0 gave the highest per-document Recall@20 without changing
+# the non-section questions.
+_SECTION_WEIGHT = 3.0
+
+
+def _select_reranker() -> PDFPageReranker:
+    """Choose the reranker.  Only the offline lexical one is bundled today."""
+
+    return LexicalPDFPageReranker()
+
+
+def _rerank(
+    question: str,
+    index: _PageIndex,
+    candidates: list[MemoryCitation],
+) -> list[MemoryCitation]:
+    if not candidates:
+        return []
+    try:
+        return _select_reranker().rerank(question, index, candidates)
+    except Exception:  # noqa: BLE001 - a reranker fault must degrade to the fused order.
+        return LexicalPDFPageReranker().rerank(question, index, candidates)
 
 
 _INDEX_CACHE: dict[tuple[Any, ...], _PageIndex] = {}
 
 
-def _rank_entries(memory_ref: Any, entries: list[Any], question: str) -> list[Any]:
+def _cached_index(memory_ref: Any, entries: list[Any]) -> _PageIndex:
     key = _index_cache_key(memory_ref, entries)
     index = _INDEX_CACHE.get(key)
     if index is None:
@@ -540,8 +884,12 @@ def _rank_entries(memory_ref: Any, entries: list[Any], question: str) -> list[An
         if len(_INDEX_CACHE) >= 4:
             _INDEX_CACHE.pop(next(iter(_INDEX_CACHE)))
         _INDEX_CACHE[key] = index
-    ranked = index.rank(question)
-    return [index.entries[position] for _score, position in ranked]
+    return index
+
+
+def _rank_entries(memory_ref: Any, entries: list[Any], question: str) -> list[Any]:
+    index = _cached_index(memory_ref, entries)
+    return [index.entries[position] for _score, position in index.rank(question)]
 
 
 def _index_cache_key(memory_ref: Any, entries: list[Any]) -> tuple[Any, ...]:
@@ -550,17 +898,31 @@ def _index_cache_key(memory_ref: Any, entries: list[Any]) -> tuple[Any, ...]:
     else:
         first = entries[0].entry
         ref_key = (first.memory_artifact_id, 0, first.created_in_revision)
-    return (ref_key, len(entries))
+    # The Memory artifact id is the constant "memory", so two scopes can share a
+    # (family, artifact_id, revision, count) tuple.  Fingerprint the entry
+    # versions as well so one scope can never be served another scope's index.
+    fingerprint = hashlib.blake2b(digest_size=16)
+    for record in entries:
+        fingerprint.update(record.entry.entry_id.encode("utf-8"))
+        fingerprint.update(b"\x00")
+        fingerprint.update(record.entry.entry_version_id.encode("utf-8"))
+        fingerprint.update(b"\x00")
+    return (ref_key, len(entries), fingerprint.hexdigest())
 
 
 def _build_index(entries: list[Any]) -> _PageIndex:
+    tokens: list[list[str]] = []
     passages: list[list[list[str]]] = []
     page_terms: list[set[str]] = []
+    sections: list[frozenset[str]] = []
     for record in entries:
-        tokens = _rank_tokens(record.entry.text)
-        page_terms.append(set(tokens))
-        passages.append(_split_passages(tokens))
-    return _PageIndex(entries, passages, page_terms)
+        raw = _rank_tokens(record.entry.text)
+        expanded = _index_tokens(record.entry.text)
+        tokens.append(raw)
+        page_terms.append(set(expanded))
+        passages.append(_split_passages(expanded))
+        sections.append(_page_sections(raw, expanded))
+    return _PageIndex(entries, tokens, passages, page_terms, sections)
 
 
 def _split_passages(tokens: list[str]) -> list[list[str]]:
@@ -570,12 +932,33 @@ def _split_passages(tokens: list[str]) -> list[list[str]]:
     stride = 60
     if len(tokens) <= size:
         return [tokens]
-    return [tokens[start : start + size] for start in range(0, len(tokens) - size + 1, stride)]
+    starts = list(range(0, len(tokens) - size + 1, stride))
+    if starts[-1] + size < len(tokens):
+        # Anchor one extra window at the end so a page whose evidence sits in the
+        # tail is still scored; the strided windows alone stopped at 90 tokens for
+        # pages of 91-149 tokens.
+        starts.append(len(tokens) - size)
+    return [tokens[start : start + size] for start in starts]
 
 
 def _rank_tokens(text: str) -> list[str]:
+    """Raw backend-safe terms, used for FTS queries and page tokenization."""
+
     normalized = unicodedata.normalize("NFC", text).casefold()
-    return [token for token in _TOKEN.findall(normalized) if token not in _QUERY_STOPWORDS]
+    return [
+        token
+        for token in _TOKEN.findall(normalized)
+        if token not in _QUERY_STOPWORDS and (len(token) > 1 or token.isdigit())
+    ]
+
+
+def _index_tokens(text: str) -> list[str]:
+    """Both the raw and the stemmed term, so morphology gains without losing a
+    discriminative surface form (``operates`` stays distinguishable from the very
+    common stem ``oper``)."""
+
+    raw = _rank_tokens(text)
+    return raw + [stem_term(token) for token in raw]
 
 
 def _distilled_queries(question: str) -> tuple[str, ...]:
