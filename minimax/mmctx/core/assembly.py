@@ -24,6 +24,7 @@ def build_pack(
     budget_tokens: int,
     db: dict[str, object],
     corpus_stats: dict[str, int],
+    base_commit: str = "",
 ) -> dict[str, object]:
     """按 token 预算裁剪命中；每条来源保留可反查的 path:line:hash 与正文。"""
     sources: list[dict[str, object]] = []
@@ -59,6 +60,7 @@ def build_pack(
         "title": str(task.get("title", "")),
         "query": query_from_task(task),
         "spec_digest": spec_digest,
+        "base_commit": base_commit,
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "budget_tokens": budget_tokens,
         "used_tokens": used,

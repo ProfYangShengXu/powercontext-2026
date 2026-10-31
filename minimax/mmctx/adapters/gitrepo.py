@@ -32,10 +32,16 @@ class Workspace:
             args.extend(["--", *paths])
         return self._run(args).stdout.strip()
 
+    def prefix(self) -> str:
+        """工作目录相对 git 仓库根的路径前缀（本仓是 minimax/）。"""
+        result = self._run(["git", "rev-parse", "--show-prefix"])
+        return result.stdout.strip() if result.returncode == 0 else ""
+
     def show(self, path: str, rev: str = "HEAD") -> str:
-        result = self._run(["git", "show", f"{rev}:{path}"])
+        full = self.prefix() + path
+        result = self._run(["git", "show", f"{rev}:{full}"])
         if result.returncode != 0:
-            raise FileNotFoundError(f"{rev}:{path}")
+            raise FileNotFoundError(f"{rev}:{full}")
         return result.stdout
 
     def check_patch(self, diff_text: str) -> tuple[bool, str]:

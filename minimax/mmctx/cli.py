@@ -93,7 +93,18 @@ def load_task(path: Path) -> dict[str, Any]:
     return data
 
 
-def read_source_factory(settings: Settings):
+def read_source_factory(settings: Settings, rev: str | None = None):
+    """读来源原文；给定 rev 时从该提交读（上下文包是历史快照，不能被后续修改变「假」）。"""
+    if rev:
+        from mmctx.adapters.gitrepo import Workspace
+
+        workspace = Workspace(settings.root)
+
+        def read_at_rev(path: str) -> str:
+            return workspace.show(path, rev)
+
+        return read_at_rev
+
     def read(path: str) -> str:
         return (settings.root / path).read_text(encoding="utf-8")
 
@@ -237,6 +248,7 @@ def cmd_context(args: argparse.Namespace, settings: Settings) -> int:
     stats = store.stats()
     meta = {"table": stats.table, "chunks": stats.chunks, "current": stats.current_chunks,
             "docs": stats.docs, "parser": stats.parser}
+    base_commit = bundle.workspace.head()
     pack = build_pack(
         task,
         fused,
@@ -244,8 +256,9 @@ def cmd_context(args: argparse.Namespace, settings: Settings) -> int:
         budget_tokens=settings.budget_tokens,
         db=meta,
         corpus_stats={"spec": len(spec_items(settings)), "docs": len(corpus_documents(settings))},
+        base_commit=base_commit,
     )
-    require_verified(pack, read_source_factory(settings), store.lookup)
+    require_verified(pack, read_source_factory(settings, base_commit), store.lookup)
 
     missing = check_expected_sources(pack, task)
     if missing:
@@ -267,6 +280,7 @@ def cmd_context(args: argparse.Namespace, settings: Settings) -> int:
         "run_id": run_id,
         "task_id": task["task_id"],
         "spec_digest": digest,
+        "base_commit": base_commit,
         "context_sha256": context_sha,
         "vector_warm": warm,
         "sources": len(pack["sources"]),
@@ -329,7 +343,11 @@ def cmd_run(args: argparse.Namespace, settings: Settings) -> int:
         print(f"ERROR: 上下文包属于 {pack.get('task_id')!r}，与任务 {task['task_id']!r} 不匹配", file=sys.stderr)
         devlog_write(settings, run_id, {"step": "error", "code": "context_task_mismatch"})
         return 4
-    require_verified(pack, read_source_factory(settings), bundle.store.lookup)
+    require_verified(
+        pack,
+        read_source_factory(settings, pack.get("base_commit") or None),
+        bundle.store.lookup,
+    )
     pack_text = json.dumps(pack, ensure_ascii=False, indent=2, sort_keys=True)
     context_sha = hashlib.sha256(pack_text.encode("utf-8")).hexdigest()
     md = render_markdown(pack)
@@ -672,7 +690,8 @@ def cmd_verify(args: argparse.Namespace, settings: Settings) -> int:
         from mmctx.bootstrap.main import build_bundle
 
         store = build_bundle(settings, with_state=False, with_model=False).store
-        errors.extend(verify_sources(pack, read_source_factory(settings), store.lookup))
+        reader = read_source_factory(settings, pack.get("base_commit") or None)
+        errors.extend(verify_sources(pack, reader, store.lookup))
         checked = len(pack.get("sources", []))
     if args.run:
         from mmctx.adapters.gitrepo import Workspace
