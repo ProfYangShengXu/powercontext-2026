@@ -54,13 +54,15 @@
         </section>
 
         <section class="card review-card" aria-labelledby="review-title">
-          <div class="section-head">
-            <p class="eyebrow">复习 · REVIEW</p>
-            <h2 id="review-title">优先复习</h2>
+          <div class="section-head review-head">
+            <div>
+              <p class="eyebrow">复习 · REVIEW</p>
+              <h2 id="review-title">优先复习</h2>
+            </div>
+            <button id="review-refresh" class="refresh-btn" type="button" title="重新读取 PowerContext 记忆">刷新</button>
           </div>
-          <div class="review-placeholder">
-            <span class="coming">M3 接入 PowerContext</span>
-            <p>标记「不懂」与提问记录会写进跨会话记忆；重启后，这里会挑出你最该回看的薄弱点。</p>
+          <div id="review-body" class="review-body" aria-live="polite">
+            <div class="review-loading"><span class="spinner spinner-small" aria-hidden="true"></span>正在读取跨会话记忆…</div>
           </div>
         </section>
       </aside>
@@ -104,8 +106,8 @@
     </main>
 
     <footer class="footer">
-      <span>拾遗 · 单机单用户 · 资料只存 seekdb，不调用外部模型</span>
-      <span>M2 · Web UI</span>
+      <span>拾遗 · 单机单用户 · 资料在 seekdb，复习状态在 PowerContext</span>
+      <span>M3 · 记忆闭环</span>
     </footer>
   </div>
 

@@ -15,10 +15,14 @@
   const results = document.querySelector("#results");
   const resultsMeta = document.querySelector("#results-meta");
   const examples = document.querySelector("#examples");
+  const reviewBody = document.querySelector("#review-body");
+  const reviewRefresh = document.querySelector("#review-refresh");
 
   const TERM_SEPARATORS = /[\s，,。；;：:、？！?!（）()【】\[\]"'“”‘’/\\|]+/;
 
   let searching = false;
+  let reviewLoading = false;
+  let lastSearch = null;
 
   function splitPaths(value) {
     return value
@@ -285,6 +289,30 @@
 
       top.append(source, location, tag);
 
+      if (item.doc_id) {
+        const actions = document.createElement("div");
+        actions.className = "result-actions";
+
+        const weakButton = document.createElement("button");
+        weakButton.type = "button";
+        weakButton.className = "mini-btn";
+        weakButton.dataset.feedbackVerdict = "weak";
+        weakButton.dataset.docId = item.doc_id;
+        weakButton.textContent = "标记不懂";
+        weakButton.title = "把这条资料写入 PowerContext 薄弱点记忆";
+
+        const masteredButton = document.createElement("button");
+        masteredButton.type = "button";
+        masteredButton.className = "mini-btn";
+        masteredButton.dataset.feedbackVerdict = "mastered";
+        masteredButton.dataset.docId = item.doc_id;
+        masteredButton.textContent = "已掌握";
+        masteredButton.title = "把这条资料记为已掌握";
+
+        actions.append(weakButton, masteredButton);
+        top.append(actions);
+      }
+
       const snippet = document.createElement("p");
       snippet.className = "snippet";
       appendHighlighted(snippet, item.text || "", tokens);
@@ -329,6 +357,180 @@
     }
   }
 
+  function renderReviewLoading() {
+    reviewBody.replaceChildren();
+    const wrapper = document.createElement("div");
+    wrapper.className = "review-loading";
+    const spinner = document.createElement("span");
+    spinner.className = "spinner spinner-small";
+    spinner.setAttribute("aria-hidden", "true");
+    wrapper.append(spinner, document.createTextNode("正在读取跨会话记忆…"));
+    reviewBody.append(wrapper);
+  }
+
+  function renderReviewEmpty(title, detail) {
+    reviewBody.replaceChildren();
+    const box = document.createElement("div");
+    box.className = "review-empty";
+
+    const heading = document.createElement("p");
+    heading.textContent = title;
+
+    const text = document.createElement("span");
+    text.textContent = detail;
+
+    box.append(heading, text);
+    reviewBody.append(box);
+  }
+
+  function renderReviewError(message) {
+    reviewBody.replaceChildren();
+    const box = document.createElement("div");
+    box.className = "review-empty is-error";
+
+    const heading = document.createElement("p");
+    heading.textContent = "PowerContext 未连接";
+
+    const text = document.createElement("span");
+    text.textContent = "请先在 127.0.0.1:8000 启动 PowerContext（powercontext server run），再重试。";
+    text.title = message || "";
+
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "review-retry";
+    retry.textContent = "重试";
+    retry.addEventListener("click", () => loadReview());
+
+    box.append(heading, text, retry);
+    reviewBody.append(box);
+  }
+
+  function renderReview(data) {
+    reviewBody.replaceChildren();
+    const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+
+    if (!suggestions.length) {
+      renderReviewEmpty(
+        data.status === "empty" ? "暂无记忆，先去学习吧" : "暂无复习建议",
+        data.status === "empty"
+          ? "在检索结果上点「标记不懂」，这条薄弱点会写进 PowerContext。"
+          : "PowerContext 没有返回可解析的复习条目。"
+      );
+      return;
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "review-meta";
+    const count = document.createElement("span");
+    count.textContent = `${suggestions.length} 条薄弱点记忆`;
+    const source = document.createElement("span");
+    source.textContent = "PowerContext · 重启不丢";
+    meta.append(count, source);
+
+    const list = document.createElement("ul");
+    list.className = "review-list";
+    suggestions.forEach((suggestion) => {
+      const item = document.createElement("li");
+      item.className = "review-item";
+
+      const text = document.createElement("p");
+      text.className = "review-text";
+      text.textContent = suggestion.text || "";
+      text.title = suggestion.text || "";
+      item.append(text);
+
+      const artifact = suggestion.artifact;
+      if (artifact && artifact.artifact_id) {
+        const family = artifact.family || "atomic-memory";
+        const revision = artifact.revision == null ? "" : `@${artifact.revision}`;
+        item.title = `${family}/${artifact.artifact_id}${revision}`;
+      }
+      list.append(item);
+    });
+
+    reviewBody.append(meta, list);
+  }
+
+  async function loadReview({ quiet = false } = {}) {
+    if (reviewLoading) {
+      return;
+    }
+    reviewLoading = true;
+    reviewRefresh.disabled = true;
+    if (!quiet) {
+      renderReviewLoading();
+    }
+
+    try {
+      const response = await fetch("/review", { headers: { Accept: "application/json" } });
+      if (!response.ok) {
+        throw new Error(await readError(response, `读取复习建议失败（HTTP ${response.status}）`));
+      }
+      const data = await response.json();
+      renderReview(data);
+    } catch (error) {
+      renderReviewError(error.message || "无法连接 PowerContext。");
+    } finally {
+      reviewLoading = false;
+      reviewRefresh.disabled = false;
+    }
+  }
+
+  async function submitFeedback(button) {
+    const actions = button.closest(".result-actions");
+    const docId = button.dataset.docId;
+    const verdict = button.dataset.feedbackVerdict;
+    if (!actions || !docId || !verdict) {
+      return;
+    }
+
+    const buttons = Array.from(actions.querySelectorAll("button"));
+    buttons.forEach((item) => {
+      item.disabled = true;
+    });
+
+    let status = actions.querySelector(".feedback-state");
+    if (!status) {
+      status = document.createElement("span");
+      status.className = "feedback-state";
+      status.setAttribute("role", "status");
+      actions.append(status);
+    }
+    status.className = "feedback-state";
+    status.textContent = "记录中…";
+    status.title = "";
+
+    try {
+      const response = await fetch("/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          doc_id: docId,
+          verdict,
+          note: "",
+          query: lastSearch ? lastSearch.query : "",
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(await readError(response, `记录失败（HTTP ${response.status}）`));
+      }
+
+      const data = await response.json();
+      buttons.forEach((item) => item.remove());
+      status.className = "feedback-state is-success";
+      status.textContent = verdict === "weak" ? "已记为薄弱点" : "已记为掌握";
+      status.title = data.artifact_ref || (data.source && data.source.source_id) || "";
+      loadReview({ quiet: true });
+    } catch (error) {
+      status.className = "feedback-state is-error";
+      status.textContent = "记录失败，检查 PowerContext";
+      status.title = error.message || "";
+      buttons.forEach((item) => {
+        item.disabled = false;
+      });
+    }
+  }
+
   async function runSearch() {
     if (searching) {
       return;
@@ -367,6 +569,7 @@
         throw new Error("检索响应格式不正确。");
       }
 
+      lastSearch = { query, course };
       const term = decodeTerm(response.headers.get("X-Search-Term"), query);
       renderResults(payload, term, performance.now() - started, query);
     } catch (error) {
@@ -395,4 +598,15 @@
     queryInput.value = chip.dataset.query || "";
     searchForm.requestSubmit();
   });
+
+  results.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-feedback-verdict]");
+    if (!button || button.disabled) {
+      return;
+    }
+    submitFeedback(button);
+  });
+
+  reviewRefresh.addEventListener("click", () => loadReview());
+  loadReview();
 })();

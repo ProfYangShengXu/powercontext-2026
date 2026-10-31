@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,6 +15,12 @@ MAX_COURSE_LENGTH = 64
 
 HOST = "127.0.0.1"
 PORT = 8001
+
+POWERCONTEXT_BASE_URL = os.environ.get(
+    "POWERCONTEXT_BASE_URL", "http://127.0.0.1:8000"
+).rstrip("/")
+POWERCONTEXT_SCOPE_KEY = "studydesk"
+POWERCONTEXT_TIMEOUT_SECONDS = 15.0
 
 SUPPORTED_SUFFIXES = {".md", ".txt", ".pdf"}
 EMBEDDING_MODEL_DIR = (
