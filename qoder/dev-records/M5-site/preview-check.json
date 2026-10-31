@@ -1,26 +1,31 @@
 {
   "url": "http://127.0.0.1:8010/",
+  "checked_at": "2026-10-31",
   "checks": {
     "desktop": {
       "viewport": [
         1440,
-        1000
+        900
       ],
       "clientWidth": 1440,
       "scrollWidth": 1440,
-      "pageHeight": 5350,
+      "horizontalOverflow": false,
+      "pageHeight": 4694,
       "h1": 1,
       "h2": 6,
       "images": [
         [
           "./assets/app-ui.png",
           2560,
-          48
+          1440
         ]
       ],
-      "anchors": 15,
+      "imageLoading": "eager",
+      "anchors": 18,
       "emptyHrefs": 0,
-      "lazyLoaded": true
+      "missingAnchors": [],
+      "consoleErrors": 0,
+      "brokenImages": 0
     },
     "mobile": {
       "viewport": [
@@ -29,19 +34,23 @@
       ],
       "clientWidth": 390,
       "scrollWidth": 390,
-      "pageHeight": 7422,
+      "horizontalOverflow": false,
+      "pageHeight": 6217,
       "h1": 1,
       "h2": 6,
       "images": [
         [
           "./assets/app-ui.png",
           2560,
-          48
+          1440
         ]
       ],
-      "anchors": 15,
+      "imageLoading": "eager",
+      "anchors": 18,
       "emptyHrefs": 0,
-      "lazyLoaded": true
+      "missingAnchors": [],
+      "consoleErrors": 0,
+      "brokenImages": 0
     }
   }
 }

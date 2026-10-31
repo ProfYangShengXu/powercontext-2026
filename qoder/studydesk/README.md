@@ -205,6 +205,8 @@ tail -n 2 logs/memory_*.jsonl
 
 `site/` 是提交用的静态单页展示站：项目一句话、F1/F2/F3 三张功能卡、界面截图、seekdb / PowerContext 分工、GitHub 与复现链接，以及留空的使用效果区。
 
+版式采用「学习档案」：首屏是一张带朱批的检索纸，功能是三张等高的索引卡，界面区只保留一张实拍，可点开原图。
+
 ```bash
 cd site
 python3 -m http.server 8010 --bind 127.0.0.1
