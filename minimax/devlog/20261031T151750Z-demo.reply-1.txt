@@ -1,0 +1,53 @@
+```diff
+--- a/demo_project/shop/filters.py
++++ b/demo_project/shop/filters.py
+@@ -11,6 +11,27 @@ def filter_orders(
+     """按状态、应付金额下限、会员等级筛选订单，保持输入顺序。"""
+     result = list(orders)
+ 
++    if statuses is not None:
++        if not isinstance(statuses, set) or not all(isinstance(s, str) for s in statuses):
++            raise ValueError("statuses must be a set of strings")
++        result = [order for order in result if order.status in statuses]
++
++    if min_total_cents is not None:
++        if not isinstance(min_total_cents, int):
++            raise ValueError("min_total_cents must be an integer")
++        result = [
++            order for order in result
++            if pricing.total_cents(order) >= min_total_cents
++        ]
++
++    if member_levels is not None:
++        if not isinstance(member_levels, set) or not all(isinstance(l, str) for l in member_levels):
++            raise ValueError("member_levels must be a set of strings")
++        result = [order for order in result if order.member_level in member_levels]
++
++    if exclude_ids is not None:
++        if not isinstance(exclude_ids, set) or not all(isinstance(oid, str) for oid in exclude_ids):
++            raise ValueError("exclude_ids must be a set of strings")
++        result = [order for order in result if order.order_id not in exclude_ids]
++
+     return result
+ 
+ 
+--- a/demo_project/shop/pricing.py
++++ b/demo_project/shop/pricing.py
+@@ -1,4 +1,5 @@
+ """金额计算：会员折扣与应付总额。"""
+ 
++from shop.models import Order
+ from __future__ import annotations
+ 
+ from shop.models import MEMBER_DISCOUNT_PERMILLE, MEMBER_LEVELS, Order
+@@ -15,4 +16,6 @@ def total_cents(order: Order) -> int:
+     """应付金额（分），四舍五入到整分（half-up）。
+ 
+     total = amount_cents * (1000 - discount_permille) / 1000
++    """
++    if not isinstance(order, Order):
++        raise ValueError("order must be an instance of Order")
+     rate = discount_permille(order.member_level)
+     numerator = order.amount_cents * (1000 - rate)
+     return (numerator + 500) // 1000
+```

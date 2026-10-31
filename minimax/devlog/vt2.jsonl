@@ -1,0 +1,1 @@
+{"checked": 12, "errors": ["demo_project/shop/filters.py:11-20: content hash mismatch", "demo_project/shop/filters.py:1-8: content hash mismatch"], "ok": false, "run_id": "vt2", "step": "verify", "ts": "2026-10-31T15:29:25+00:00"}

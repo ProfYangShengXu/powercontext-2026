@@ -257,7 +257,10 @@ def cmd_context(args: argparse.Namespace, settings: Settings) -> int:
     stats = store.stats()
     meta = {"table": stats.table, "chunks": stats.chunks, "current": stats.current_chunks,
             "docs": stats.docs, "parser": stats.parser}
-    base_commit = bundle.workspace.head()
+    # 工作区脏（例如刚改规格还没提交）时不能用 HEAD 校验：包是用磁盘内容建的。
+    # 脏工作区把 base_commit 留空，verify 改读工作区；干净时记提交，支持事后历史反查。
+    dirty = bool(bundle.workspace.status(["corpus", "demo_project"]))
+    base_commit = "" if dirty else bundle.workspace.head()
     pack = build_pack(
         task,
         fused,

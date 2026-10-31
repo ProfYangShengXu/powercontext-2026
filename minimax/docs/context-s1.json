@@ -1,0 +1,173 @@
+{
+  "base_commit": "ad24f11f67d869d45f14b663fbe292893bdc9fa0",
+  "budget_exceeded": false,
+  "budget_tokens": 12000,
+  "corpus": {
+    "docs": 10,
+    "spec": 4
+  },
+  "counts": {
+    "code": 6,
+    "spec": 4,
+    "test": 2
+  },
+  "created_at": "2026-10-31T15:39:54+00:00",
+  "db": {
+    "chunks": 49,
+    "current": 46,
+    "docs": 10,
+    "parser": "IK",
+    "table": "mm_doc_chunks"
+  },
+  "query": "订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试\ndemo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、\nmember_levels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的\n应付金额且为「大于等于」；空集合与 None 语义不同；非法枚举抛 ValueError；保持输入顺序。\n测试文件是验收依据，不得修改。\n 订单筛选 filter_orders 会员等级 应付金额下限 statuses min_total_cents",
+  "sources": [
+    {
+      "chunk_uid": "4c0c2f55e99001bb04a053a2ea2ad311",
+      "content": "## 金额比较\nmin_total_cents 比较的是订单的应付金额（即 shop.pricing.total_cents(order) 的结果），不是 amount_cents 原价。比较使用大于等于：应付金额 ≥ min_total_cents 即满足条件。这样会员折扣会真实影响筛选结果。",
+      "content_hash": "8ed7f7727b69c850",
+      "doc_kind": "spec",
+      "end_line": 10,
+      "fts_score": 12.7093645260643,
+      "matched_arm": "fts+vector",
+      "path": "corpus/specs/S-02-filtering.md",
+      "start_line": 9,
+      "vec_dist": 1.0444965388166274
+    },
+    {
+      "chunk_uid": "ab5d3b562acf2872a6c701905fdfb892",
+      "content": "## 覆盖范围\n目标测试覆盖筛选的四类条件、组合条件、空集合与非法值；回归测试覆盖会员折扣与应付金额计算的既有行为。",
+      "content_hash": "e8ed8afabdf94e87",
+      "doc_kind": "spec",
+      "end_line": 13,
+      "fts_score": 11.836286619950439,
+      "matched_arm": "fts+vector",
+      "path": "corpus/specs/S-03-testing.md",
+      "start_line": 12,
+      "vec_dist": 1.0989530783191646
+    },
+    {
+      "chunk_uid": "84edb185a89dfeb18316174762289dbd",
+      "content": "## 筛选条件\n四个条件全部为可选参数，默认 None 表示该条件不生效。多个条件之间是逻辑与（AND）：一条订单必须同时满足全部已给出的条件才会被返回。statuses 与 member_levels 是字符串集合；min_total_cents 是整数下限；exclude_ids 是要排除的 order_id 集合。",
+      "content_hash": "765b4f3a7c542223",
+      "doc_kind": "spec",
+      "end_line": 7,
+      "fts_score": 15.38511281426205,
+      "matched_arm": "fts+vector",
+      "path": "corpus/specs/S-02-filtering.md",
+      "start_line": 6,
+      "vec_dist": 1.210959846536501
+    },
+    {
+      "chunk_uid": "91ab2f7fc1e0a2304b9a08b74e381fd1",
+      "content": "## 会员等级与折扣\n会员等级只有四个合法取值：regular、silver、gold、platinum，定义在 MEMBER_LEVELS 元组中。对应折扣千分数分别是 0、50、100、150，即 0%、5%、10%、15%。应付金额 = amount_cents × (1000 - 折扣千分数) ÷ 1000，并按 half-up 规则四舍五入到整分。",
+      "content_hash": "00bc172d9369d242",
+      "doc_kind": "spec",
+      "end_line": 13,
+      "fts_score": 6.293442895800657,
+      "matched_arm": "fts+vector",
+      "path": "corpus/specs/S-01-domain.md",
+      "start_line": 12,
+      "vec_dist": 1.2263367560569514
+    },
+    {
+      "chunk_uid": "4960b4c7ba1978ae6ed2426f469b4790",
+      "content": "def filter_orders(\n    orders: list[Order],\n    *,\n    statuses: set[str] | None = None,\n    min_total_cents: int | None = None,\n    member_levels: set[str] | None = None,\n    exclude_ids: set[str] | None = None,\n) -> list[Order]:\n    \"\"\"按状态、应付金额下限、会员等级与排除名单筛选订单，保持输入顺序。\"\"\"\n    if statuses is not None:\n        if not statuses.issubset(set(STATUSES)):\n            raise ValueError(f\"Invalid statuses: {statuses - set(STATUSES)}\")\n    if member_levels is not None:\n        if not member_levels.issubset(set(MEMBER_LEVELS)):\n            raise ValueError(f\"Invalid member_levels: {member_levels - set(MEMBER_LEVELS)}\")\n    \n    filtered_orders = []\n    for order in orders:\n        if statuses is not None and order.status not in statuses:\n            continue\n        if min_total_cents is not None and total_cents(order) < min_total_cents:\n            continue\n        if member_levels is not None and order.member_level not in member_levels:\n            continue\n        if exclude_ids is not None and order.order_id in exclude_ids:\n            continue\n        filtered_orders.append(order)\n    \n    return filtered_orders",
+      "content_hash": "912e97d1afddfa44",
+      "doc_kind": "code",
+      "end_line": 39,
+      "fts_score": 12.038939220167217,
+      "matched_arm": "fts+vector",
+      "path": "demo_project/shop/filters.py",
+      "start_line": 11,
+      "vec_dist": 1.1989983471054888
+    },
+    {
+      "chunk_uid": "f839bf8827cd366a0c673b8bfcdde5b9",
+      "content": "\"\"\"金额计算：会员折扣与应付总额。\"\"\"\n\nfrom __future__ import annotations\n\nfrom shop.models import MEMBER_DISCOUNT_PERMILLE, MEMBER_LEVELS, Order",
+      "content_hash": "a9f7dca58033fcc5",
+      "doc_kind": "code",
+      "end_line": 5,
+      "fts_score": 6.053133538813154,
+      "matched_arm": "fts+vector",
+      "path": "demo_project/shop/pricing.py",
+      "start_line": 1,
+      "vec_dist": 1.2077246097303405
+    },
+    {
+      "chunk_uid": "e0dec172f8eeacbe4a4ecc42d33e3644",
+      "content": "class Order:\n    \"\"\"一条订单。\n\n    amount_cents 是商品原价（单位：分）；应付金额按会员折扣另算，见 shop.pricing。\n    \"\"\"\n\n    order_id: str\n    status: str\n    member_level: str\n    amount_cents: int",
+      "content_hash": "5701a7955b2fb26e",
+      "doc_kind": "code",
+      "end_line": 35,
+      "fts_score": 6.006880830566491,
+      "matched_arm": "fts+vector",
+      "path": "demo_project/shop/models.py",
+      "start_line": 26,
+      "vec_dist": 1.2193373707450181
+    },
+    {
+      "chunk_uid": "9f28bb82fac6f5c741e63d6b73d4bed8",
+      "content": "\"\"\"订单筛选。\n\n目标行为见 corpus/specs/S-02-filtering.md；本文件当前是尚未实现的占位实现。\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom shop.models import Order, STATUSES, MEMBER_LEVELS\nfrom shop.pricing import total_cents",
+      "content_hash": "c411b6a53e939f3d",
+      "doc_kind": "code",
+      "end_line": 9,
+      "fts_score": 8.888659059938501,
+      "matched_arm": "fts+vector",
+      "path": "demo_project/shop/filters.py",
+      "start_line": 1,
+      "vec_dist": 1.2920600025605138
+    },
+    {
+      "chunk_uid": "9c1a7079d2bd6db86c5dccdc3daa28a6",
+      "content": "\"\"\"回归测试：会员折扣与应付金额的既有行为（改前改后都必须绿）。\"\"\"\n\nfrom __future__ import annotations\n\nfrom shop.models import Order\nfrom shop.pricing import discount_permille, total_cents",
+      "content_hash": "cfd9e3f3e1c99f85",
+      "doc_kind": "test",
+      "end_line": 6,
+      "fts_score": 5.713522315895043,
+      "matched_arm": "fts+vector",
+      "path": "demo_project/tests/test_pricing.py",
+      "start_line": 1,
+      "vec_dist": 1.2156078229538854
+    },
+    {
+      "chunk_uid": "be75a361847bd72d1098d0ca046a781f",
+      "content": "def total_cents(order: Order) -> int:\n    \"\"\"应付金额（分），四舍五入到整分（half-up）。\n\n    total = amount_cents * (1000 - discount_permille) / 1000\n    \"\"\"\n    rate = discount_permille(order.member_level)\n    numerator = order.amount_cents * (1000 - rate)\n    return (numerator + 500) // 1000",
+      "content_hash": "a4540b71bd243cb3",
+      "doc_kind": "code",
+      "end_line": 22,
+      "fts_score": 2.0000158315081347,
+      "matched_arm": "fts",
+      "path": "demo_project/shop/pricing.py",
+      "start_line": 15,
+      "vec_dist": null
+    },
+    {
+      "chunk_uid": "663380f4f183c73e60e4a5cefa8e5f45",
+      "content": "\"\"\"订单领域模型：字段、状态与会员等级。\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\nSTATUS_PENDING = \"pending\"\nSTATUS_PAID = \"paid\"\nSTATUS_SHIPPED = \"shipped\"\nSTATUS_CANCELLED = \"cancelled\"\n\nSTATUSES = (STATUS_PENDING, STATUS_PAID, STATUS_SHIPPED, STATUS_CANCELLED)\n\nMEMBER_LEVELS = (\"regular\", \"silver\", \"gold\", \"platinum\")\n\n# 折扣率用千分数表示，避免浮点误差：50 表示 5%。\nMEMBER_DISCOUNT_PERMILLE = {\n    \"regular\": 0,\n    \"silver\": 50,\n    \"gold\": 100,\n    \"platinum\": 150,\n}\n\n\n@dataclass(frozen=True)",
+      "content_hash": "0a73ac8acfcf453a",
+      "doc_kind": "code",
+      "end_line": 25,
+      "fts_score": 3.3627532309152195,
+      "matched_arm": "fts",
+      "path": "demo_project/shop/models.py",
+      "start_line": 1,
+      "vec_dist": null
+    },
+    {
+      "chunk_uid": "a189b995f2b02df281a09701e82aaedc",
+      "content": "def test_filter_by_status():\n    assert _ids(filter_orders(_orders(), statuses={\"paid\"})) == [\"o2\", \"o4\", \"o5\"]",
+      "content_hash": "fdd8e2279c656eb8",
+      "doc_kind": "test",
+      "end_line": 33,
+      "fts_score": 2.8985438786917754,
+      "matched_arm": "fts",
+      "path": "demo_project/tests/test_filters.py",
+      "start_line": 32,
+      "vec_dist": null
+    }
+  ],
+  "spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "task_id": "s1-order-filter",
+  "title": "订单筛选：按状态、应付金额下限、会员等级与排除名单过滤",
+  "used_tokens": 1193
+}

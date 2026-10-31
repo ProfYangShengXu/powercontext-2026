@@ -1,0 +1,1 @@
+{"chunks_by_kind": {"code": 8, "spec": 21, "test": 17}, "chunks_written": 46, "db": {"chunks": 46, "current": 46, "docs": 10, "parser": "IK", "table": "mm_doc_chunks"}, "documents": 10, "elapsed_ms": 4432, "run_id": "import-smoke", "spec_digest": "28dfab7c340b059eb13318d452faed82", "step": "import", "ts": "2026-10-31T13:58:45+00:00", "vector_warm": {"expected": 46, "warm": 46}}

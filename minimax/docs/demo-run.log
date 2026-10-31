@@ -1,0 +1,276 @@
+# make demo 完整运行日志（RUN_ID=final4）
+utc: 2026-10-31T15:29Z 左右
+command: cd minimax && make RUN_ID=final4 demo
+machine: WSL2 Linux x86_64 / Python 3.12.3 / seekdb pylibseekdb 1.4.0.post2 / PowerContext 1.2.0
+exit_code: 0
+
+test -d .venv || python3 -m venv .venv
+.venv/bin/pip install -q -r requirements.txt
+WARNING: There was an error checking the latest version of pip.
+test -f .env || cp .env.example .env
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli init
+{
+  "fulltext_parser": "IK",
+  "minimax": {
+    "api_key_present": true,
+    "base_url": "https://api.minimax.chat/v1",
+    "model": "MiniMax-Text-01"
+  },
+  "powercontext": {
+    "health": {
+      "checks": {
+        "access_artifact_families": "experience:enabled,handoff:enabled,memory:enabled,profile:enabled,prompt:enabled,skill:enabled",
+        "access_mode": "disabled",
+        "access_provider": "disabled",
+        "access_resource_kinds": "server,scope,artifact",
+        "artifact_processing_supervisor": "disabled",
+        "authentication_provider": "disabled",
+        "database": "ready",
+        "runtime": "ready"
+      },
+      "status": "ready"
+    },
+    "hint": "",
+    "ready": true,
+    "scope_id": "scp_0gd1eawfd6aez1c350ew0s93ks",
+    "url": "http://127.0.0.1:8000"
+  },
+  "seekdb_path": "/mnt/wsl/mmctx-seekdb",
+  "table": "mm_doc_chunks"
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli test --run-id final4 --label test-before --log docs/test-before.log
+# mmctx test log
+label: test-before
+utc: 2026-10-31T15:34:31+00:00
+command: /mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m pytest -q
+cwd: /mnt/d/pc-work/wt-eco3/minimax/demo_project
+commit: e966688a4cd3cb603105dcdedd5288c668dc56e0
+git_status: ?? minimax/devlog/
+?? minimax/docs/
+?? minimax/out/
+tests_sha256: 794af6b9a1ba7ef403a965e92580993f93a637b215195c7a9068116952129f20
+exit_code: 1
+
+.FFFFFFFFF.....                                                          [100%]
+=================================== FAILURES ===================================
+____________________________ test_filter_by_status _____________________________
+
+    def test_filter_by_status():
+>       assert _ids(filter_orders(_orders(), statuses={"paid"})) == ["o2", "o4", "o5"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o2', 'o4', 'o5']
+E         
+E         At index 0 diff: 'o1' != 'o2'
+E         Left contains 2 more items, first extra item: 'o4'
+E         Use -v to get more diff
+
+tests/test_filters.py:33: AssertionError
+_____________________ test_min_total_uses_discounted_total _____________________
+
+    def test_min_total_uses_discounted_total():
+        # o1 9000>=9000；o2 应付 10800；o4 原价 10000 但应付 8500，应被排除。
+>       assert _ids(filter_orders(_orders(), min_total_cents=9000)) == ["o1", "o2"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o1', 'o2']
+E         
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:38: AssertionError
+_________________________ test_min_total_is_inclusive __________________________
+
+    def test_min_total_is_inclusive():
+>       assert _ids(filter_orders(_orders(), statuses={"paid"}, min_total_cents=8500)) == ["o2", "o4"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o2', 'o4']
+E         
+E         At index 0 diff: 'o1' != 'o2'
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:42: AssertionError
+_________________________ test_filter_by_member_levels _________________________
+
+    def test_filter_by_member_levels():
+>       assert _ids(filter_orders(_orders(), member_levels={"silver", "platinum"})) == ["o3", "o4"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o3', 'o4']
+E         
+E         At index 0 diff: 'o1' != 'o3'
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:46: AssertionError
+________________________ test_filters_combine_with_and _________________________
+
+    def test_filters_combine_with_and():
+        result = filter_orders(_orders(), statuses={"paid"}, min_total_cents=9000, exclude_ids={"o2"})
+>       assert result == []
+E       AssertionError: assert [Order(order_...t_cents=5000)] == []
+E         
+E         Left contains 5 more items, first extra item: Order(order_id='o1', status='pending', member_level='regular', amount_cents=9000)
+E         Use -v to get more diff
+
+tests/test_filters.py:51: AssertionError
+_______________________________ test_exclude_ids _______________________________
+
+    def test_exclude_ids():
+>       assert _ids(filter_orders(_orders(), statuses={"paid"}, exclude_ids={"o2"})) == ["o4", "o5"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o4', 'o5']
+E         
+E         At index 0 diff: 'o1' != 'o4'
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:55: AssertionError
+________________________ test_empty_set_matches_nothing ________________________
+
+    def test_empty_set_matches_nothing():
+>       assert filter_orders(_orders(), statuses=set()) == []
+E       AssertionError: assert [Order(order_...t_cents=5000)] == []
+E         
+E         Left contains 5 more items, first extra item: Order(order_id='o1', status='pending', member_level='regular', amount_cents=9000)
+E         Use -v to get more diff
+
+tests/test_filters.py:59: AssertionError
+____________________ test_unknown_status_raises_value_error ____________________
+
+    def test_unknown_status_raises_value_error():
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_filters.py:63: Failed
+_____________ test_unknown_member_level_filter_raises_value_error ______________
+
+    def test_unknown_member_level_filter_raises_value_error():
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_filters.py:68: Failed
+=========================== short test summary info ============================
+FAILED tests/test_filters.py::test_filter_by_status - AssertionError: assert ...
+FAILED tests/test_filters.py::test_min_total_uses_discounted_total - Assertio...
+FAILED tests/test_filters.py::test_min_total_is_inclusive - AssertionError: a...
+FAILED tests/test_filters.py::test_filter_by_member_levels - AssertionError: ...
+FAILED tests/test_filters.py::test_filters_combine_with_and - AssertionError:...
+FAILED tests/test_filters.py::test_exclude_ids - AssertionError: assert ['o1'...
+FAILED tests/test_filters.py::test_empty_set_matches_nothing - AssertionError...
+FAILED tests/test_filters.py::test_unknown_status_raises_value_error - Failed...
+FAILED tests/test_filters.py::test_unknown_member_level_filter_raises_value_error
+9 failed, 6 passed in 1.07s
+
+[mmctx] label=test-before exit_code=1 commit=e966688a4cd3cb603105dcdedd5288c668dc56e0
+make: [Makefile:79: demo] Error 1 (ignored)
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli import --run-id final4
+{
+  "chunks_by_kind": {
+    "code": 8,
+    "spec": 21,
+    "test": 17
+  },
+  "chunks_written": 46,
+  "db": {
+    "chunks": 46,
+    "current": 46,
+    "docs": 10,
+    "parser": "IK",
+    "table": "mm_doc_chunks"
+  },
+  "documents": 10,
+  "elapsed_ms": 12689,
+  "run_id": "final4",
+  "spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "vector_warm": {
+    "expected": 46,
+    "warm": 46
+  }
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli context --run-id final4 --task samples/s1-order-filter/task.yaml
+{
+  "base_commit": "e966688a4cd3cb603105dcdedd5288c668dc56e0",
+  "context_sha256": "c8ca9881aa2dde8abb5f16357743f1d97cdeb9dc446d3acec192131dfa7f8d9b",
+  "counts": {
+    "code": 6,
+    "spec": 4,
+    "test": 2
+  },
+  "latency_ms": 6372,
+  "pack": "out/s1-order-filter.json",
+  "pack_md": "out/s1-order-filter.md",
+  "run_id": "final4",
+  "sources": 12,
+  "spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "statements_in_search": 1,
+  "task_id": "s1-order-filter",
+  "used_tokens": 966,
+  "vector_warm": {
+    "expected": 46,
+    "warm": 46
+  }
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli run --run-id final4 --task samples/s1-order-filter/task.yaml --context out/s1-order-filter.json --commit
+{
+  "applied_commit": "ad24f11f67d869d45f14b663fbe292893bdc9fa0",
+  "attempts": 1,
+  "base_commit": "e966688a4cd3cb603105dcdedd5288c668dc56e0",
+  "context_sha256": "c8ca9881aa2dde8abb5f16357743f1d97cdeb9dc446d3acec192131dfa7f8d9b",
+  "files": [
+    "demo_project/shop/filters.py"
+  ],
+  "model": "MiniMax-Text-01",
+  "patch_source": "full_file",
+  "run_id": "final4",
+  "task_id": "s1-order-filter"
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli test --run-id final4 --label test-after --log docs/test-after.log
+# mmctx test log
+label: test-after
+utc: 2026-10-31T15:35:22+00:00
+command: /mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m pytest -q
+cwd: /mnt/d/pc-work/wt-eco3/minimax/demo_project
+commit: ad24f11f67d869d45f14b663fbe292893bdc9fa0
+git_status: ?? minimax/devlog/
+?? minimax/docs/
+?? minimax/out/
+tests_sha256: 794af6b9a1ba7ef403a965e92580993f93a637b215195c7a9068116952129f20
+exit_code: 0
+
+...............                                                          [100%]
+15 passed in 0.07s
+
+[mmctx] label=test-after exit_code=0 commit=ad24f11f67d869d45f14b663fbe292893bdc9fa0
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli state --run-id final4 --task samples/s1-order-filter/task.yaml --context out/s1-order-filter.json \
+  --status applied --todo "补丁已应用并通过目标测试" --todo "等待回归与验收"
+{
+  "applied_commit": "ad24f11f67d869d45f14b663fbe292893bdc9fa0",
+  "entry_id": "mem_ent_fa65f53b2cb04c639f0ceed915143476",
+  "run_id_from_state": "final4",
+  "seq": 4,
+  "state_bytes_utf8": 483,
+  "state_sha256": "c6ae158fbeab182f1b6c07f911ef1396",
+  "task_id": "s1-order-filter",
+  "truncated": false,
+  "unchanged": false,
+  "version": 1
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli resume --run-id final4 --task samples/s1-order-filter/task.yaml
+{
+  "applied_commit": "ad24f11f67d869d45f14b663fbe292893bdc9fa0",
+  "current_spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "entry_id": "mem_ent_fa65f53b2cb04c639f0ceed915143476",
+  "found": true,
+  "next_action": "可以继续",
+  "run_id_from_state": "final4",
+  "seq": 4,
+  "stale": false,
+  "state_spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "task_id": "s1-order-filter",
+  "todo": [
+    "补丁已应用并通过目标测试",
+    "等待回归与验收"
+  ],
+  "version": 1
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli verify --run-id final4 --context out/s1-order-filter.json --run final4
+{
+  "checked": 13,
+  "context": "out/s1-order-filter.json",
+  "ok": true,
+  "run": "final4"
+}

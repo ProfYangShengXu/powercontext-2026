@@ -1,0 +1,55 @@
+```diff
+diff --git a/demo_project/shop/filters.py b/demo_project/shop/filters.py
+--- a/demo_project/shop/filters.py
++++ b/demo_project/shop/filters.py
+@@ -11,6 +11,28 @@ def filter_orders(
+     """按状态、应付金额下限、会员等级筛选订单，保持输入顺序。"""
+     return list(orders)
+ 
++def _filter_order(order: Order, statuses: set[str] | None, min_total_cents: int | None, member_levels: set[str] | None, exclude_ids: set[str] | None) -> bool:
++    if statuses is not None and order.status not in statuses:
++        return False
++    if min_total_cents is not None:
++        total = pricing.total_cents(order)
++        if total < min_total_cents:
++            return False
++    if member_levels is not None and order.member_level not in member_levels:
++        return False
++    if exclude_ids is not None and order.order_id in exclude_ids:
++        return False
++    return True
++
++def filter_orders(
++    orders: list[Order],
++    *,
++    statuses: set[str] | None = None,
++    min_total_cents: int | None = None,
++    member_levels: set[str] | None = None,
++    exclude_ids: set[str] | None = None,
++) -> list[Order]:
++    """按状态、应付金额下限、会员等级与排除名单筛选订单，保持输入顺序。"""
++    if statuses is not None and not isinstance(statuses, set):
++        raise ValueError("statuses 必须是一个集合")
++    if member_levels is not None and not isinstance(member_levels, set):
++        raise ValueError("member_levels 必须是一个集合")
++    if exclude_ids is not None and not isinstance(exclude_ids, set):
++        raise ValueError("exclude_ids 必须是一个集合")
++    return [order for order in orders if _filter_order(order, statuses, min_total_cents, member_levels, exclude_ids)]
++
+ from __future__ import annotations
+ 
+ from shop.models import Order
+@@ -18,4 +40,3 @@ def filter_orders(
+ 
+ from shop.models import Order
+-
+diff --git a/demo_project/shop/pricing.py b/demo_project/shop/pricing.py
+--- a/demo_project/shop/pricing.py
++++ b/demo_project/shop/pricing.py
+@@ -1,4 +1,5 @@
+ """金额计算：会员折扣与应付总额。"""
+ 
++from __future__ import annotations
+ 
+ from shop.models import MEMBER_DISCOUNT_PERMILLE, MEMBER_LEVELS, Order
+```

@@ -1,0 +1,14 @@
+# mmctx test log
+label: test-after
+utc: 2026-10-31T15:35:22+00:00
+command: /mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m pytest -q
+cwd: /mnt/d/pc-work/wt-eco3/minimax/demo_project
+commit: ad24f11f67d869d45f14b663fbe292893bdc9fa0
+git_status: ?? minimax/devlog/
+?? minimax/docs/
+?? minimax/out/
+tests_sha256: 794af6b9a1ba7ef403a965e92580993f93a637b215195c7a9068116952129f20
+exit_code: 0
+
+...............                                                          [100%]
+15 passed in 0.07s

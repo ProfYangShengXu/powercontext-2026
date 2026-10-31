@@ -4,6 +4,8 @@ SAMPLE := samples/s1-order-filter/task.yaml
 # 一次 demo 的所有步骤共用一个 run_id，devlog/<run_id>.jsonl 才会串起
 # context → prompt → model reply → patch → apply → test → state 的完整证据链。
 RUN_ID := $(shell date -u +%Y%m%dT%H%M%SZ)-demo
+# 交付分支上最后一次真实 apply 的 run_id（make verify 默认重放它）
+RUN ?= final4
 
 .PHONY: help venv deps env init serve import context explain run test-before test-after state resume verify check test demo clean
 
@@ -19,7 +21,7 @@ help:
 	  'make test-after  记录改后测试（应全绿）' \
 	  'make state       把任务状态写进 PowerContext（自动对齐最近一次 apply 的 run_id/commit）' \
 	  'make resume      新进程读回任务状态' \
-	  'make verify      来源反查 + 按 devlog 重放补丁' \
+	  'make verify      来源反查 + 按 devlog 重放补丁（默认 RUN=final4）' \
 	  'make demo        一次跑完：test-before → import → context → run → test-after → state → resume → verify' \
 	  'make test        跑本模块单元/集成测试（缺 PC/seekdb 的用例会 skip）' \
 	  'PY=/path/to/python 可覆盖解释器；RUN_ID=xxx 可固定本次 demo 的编号'
@@ -66,7 +68,7 @@ resume:
 	$(MMCTX) resume --run-id $(RUN_ID) --task $(SAMPLE)
 
 verify:
-	$(MMCTX) verify --run-id $(RUN_ID) --context out/s1-order-filter.json --run $(RUN_ID)
+	$(MMCTX) verify --run-id $(RUN_ID) --context out/s1-order-filter.json --run $(RUN)
 
 check:
 	$(MMCTX) check
@@ -84,7 +86,7 @@ demo: init
 	$(MMCTX) state --run-id $(RUN_ID) --task $(SAMPLE) --context out/s1-order-filter.json \
 	  --status applied --todo "补丁已应用并通过目标测试" --todo "等待回归与验收"
 	$(MMCTX) resume --run-id $(RUN_ID) --task $(SAMPLE)
-	$(MMCTX) verify --run-id $(RUN_ID) --context out/s1-order-filter.json --run $(RUN_ID)
+	$(MMCTX) verify --run-id $(RUN_ID) --context out/s1-order-filter.json --run $(RUN)
 
 # 只清缓存；out/ 与 devlog/ 是证据，不在这里删。
 clean:

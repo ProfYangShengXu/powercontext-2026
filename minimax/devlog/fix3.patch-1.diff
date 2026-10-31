@@ -1,0 +1,42 @@
+--- a/demo_project/shop/filters.py
++++ b/demo_project/shop/filters.py
+@@ -5,7 +5,8 @@
+ 
+ from __future__ import annotations
+ 
+-from shop.models import Order
++from shop.models import Order, STATUSES, MEMBER_LEVELS
++from shop.pricing import total_cents
+ 
+ 
+ def filter_orders(
+@@ -16,5 +17,27 @@
+     member_levels: set[str] | None = None,
+     exclude_ids: set[str] | None = None,
+ ) -> list[Order]:
+-    """按状态、应付金额下限、会员等级筛选订单，保持输入顺序。"""
+-    return list(orders)
++    """按状态、应付金额下限、会员等级与排除名单筛选订单，保持输入顺序。"""
++    if statuses is not None:
++        invalid_statuses = statuses - set(STATUSES)
++        if invalid_statuses:
++            raise ValueError(f"Invalid statuses: {invalid_statuses}")
++    if member_levels is not None:
++        invalid_levels = member_levels - set(MEMBER_LEVELS)
++        if invalid_levels:
++            raise ValueError(f"Invalid member levels: {invalid_levels}")
++    
++    filtered_orders = []
++    for order in orders:
++        if exclude_ids and order.order_id in exclude_ids:
++            continue
++        if statuses and order.status not in statuses:
++            continue
++        if min_total_cents is not None:
++            order_total = total_cents(order)
++            if order_total < min_total_cents:
++                continue
++        if member_levels and order.member_level not in member_levels:
++            continue
++        filtered_orders.append(order)
++    return filtered_orders

@@ -1,0 +1,90 @@
+# EXPLAIN（候选混合检索 SQL）
+commit: ad24f11f67d869d45f14b663fbe292893bdc9fa0
+command: minimax/.venv/bin/python -m mmctx.cli explain --task samples/s1-order-filter/task.yaml
+
+===============================================================================================
+|ID|OPERATOR                                   |NAME                    |EST.ROWS|EST.TIME(us)|
+-----------------------------------------------------------------------------------------------
+|0 |UNION ALL                                  |                        |13      |3690        |
+|1 |├─SUBPLAN SCAN                             |fts_arm                 |12      |3680        |
+|2 |│ └─TOP-N SORT                             |                        |12      |3680        |
+|3 |│   └─TEXT RETRIEVAL SCAN                  |mm_doc_chunks(ix_mm_fts)|12      |3671        |
+|4 |└─SUBPLAN SCAN                             |vec_arm                 |1       |11          |
+|5 |  └─VECTOR INDEX ADAPTIVE SCAN (PRE-FILTER)|mm_doc_chunks           |1       |11          |
+===============================================================================================
+Outputs & filters:
+-------------------------------------
+  0 - output([UNION([1])], [UNION([2])], [UNION([3])], [UNION([4])], [UNION([5])], [UNION([6])], [UNION([7])], [UNION([8])], [UNION([9])], [UNION([10])],
+       [UNION([11])]), filter(nil), rowset=16
+  1 - output([fts_arm.chunk_uid], [fts_arm.doc_id], [fts_arm.doc_kind], [fts_arm.path], [fts_arm.start_line], [fts_arm.end_line], [fts_arm.content_hash],
+       [fts_arm.content], [fts_arm.fts_score], [cast(fts_arm.vec_dist, DOUBLE(-1, -1))], [fts_arm.arm]), filter(nil), rowset=16
+      access([fts_arm.chunk_uid], [fts_arm.doc_id], [fts_arm.doc_kind], [fts_arm.path], [fts_arm.start_line], [fts_arm.end_line], [fts_arm.content_hash],
+       [fts_arm.content], [fts_arm.fts_score], [fts_arm.vec_dist], [fts_arm.arm])
+  2 - output([mm_doc_chunks.chunk_uid], [mm_doc_chunks.doc_id], [mm_doc_chunks.doc_kind], [mm_doc_chunks.path], [mm_doc_chunks.start_line], [mm_doc_chunks.end_line],
+       [mm_doc_chunks.content_hash], [mm_doc_chunks.content], [MATCH(mm_doc_chunks.searchable) AGAINST(cast('订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 
+      demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试\ndemo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、\nmember_l
+      evels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的\n应付金额且为「大于等于」；空集合与 None 
+      语义不同；非法枚举抛 ValueError；保持输入顺序。\n测试文件是验收依据，不得修改。\n 订单筛选 filter_orders 会员等级 
+      应付金额下限 statuses min_total_cents', VARCHAR(1048576)))], [NULL], ['fts']), filter(nil), rowset=16
+      sort_keys([MATCH(mm_doc_chunks.searchable) AGAINST(cast('订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 demo_project/shop/filters.py 
+      的 filter_orders 目前直接返回全部订单，目标测试\ndemo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、\nmember_levels、exclude_ids 
+      四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的\n应付金额且为「大于等于」；空集合与 None 语义不同；非法枚举抛 
+      ValueError；保持输入顺序。\n测试文件是验收依据，不得修改。\n 订单筛选 filter_orders 会员等级 应付金额下限 statuses 
+      min_total_cents', VARCHAR(1048576))), DESC]), topn(40)
+  3 - output([mm_doc_chunks.chunk_uid], [mm_doc_chunks.doc_id], [mm_doc_chunks.doc_kind], [mm_doc_chunks.path], [mm_doc_chunks.start_line], [mm_doc_chunks.end_line],
+       [mm_doc_chunks.content_hash], [mm_doc_chunks.content], [MATCH(mm_doc_chunks.searchable) AGAINST(cast('订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 
+      demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试\ndemo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、\nmember_l
+      evels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的\n应付金额且为「大于等于」；空集合与 None 
+      语义不同；非法枚举抛 ValueError；保持输入顺序。\n测试文件是验收依据，不得修改。\n 订单筛选 filter_orders 会员等级 
+      应付金额下限 statuses min_total_cents', VARCHAR(1048576)))]), filter([mm_doc_chunks.is_current = 1]), rowset=16
+      access([mm_doc_chunks.__pk_increment], [mm_doc_chunks.is_current], [mm_doc_chunks.chunk_uid], [mm_doc_chunks.doc_id], [mm_doc_chunks.doc_kind], [mm_doc_chunks.path],
+       [mm_doc_chunks.start_line], [mm_doc_chunks.end_line], [mm_doc_chunks.content_hash], [mm_doc_chunks.content]), partitions(p0)
+      is_index_back=true, is_global_index=false, filter_before_indexback[false], 
+      calc_relevance=true, match_expr(MATCH(mm_doc_chunks.searchable) AGAINST(cast('订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 
+      demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试\ndemo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、\nmember_l
+      evels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的\n应付金额且为「大于等于」；空集合与 None 
+      语义不同；非法枚举抛 ValueError；保持输入顺序。\n测试文件是验收依据，不得修改。\n 订单筛选 filter_orders 会员等级 
+      应付金额下限 statuses min_total_cents', VARCHAR(1048576)))), 
+      pushdown_match_filter(MATCH(mm_doc_chunks.searchable) AGAINST(cast('订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 
+      demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试\ndemo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、\nmember_l
+      evels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的\n应付金额且为「大于等于」；空集合与 None 
+      语义不同；非法枚举抛 ValueError；保持输入顺序。\n测试文件是验收依据，不得修改。\n 订单筛选 filter_orders 会员等级 
+      应付金额下限 statuses min_total_cents', VARCHAR(1048576))))
+  4 - output([vec_arm.chunk_uid], [vec_arm.doc_id], [vec_arm.doc_kind], [vec_arm.path], [vec_arm.start_line], [vec_arm.end_line], [vec_arm.content_hash],
+       [vec_arm.content], [cast(vec_arm.fts_score, DOUBLE(-1, -1))], [vec_arm.vec_dist], [vec_arm.arm]), filter(nil), rowset=16
+      access([vec_arm.chunk_uid], [vec_arm.doc_id], [vec_arm.doc_kind], [vec_arm.path], [vec_arm.start_line], [vec_arm.end_line], [vec_arm.content_hash],
+       [vec_arm.content], [vec_arm.fts_score], [vec_arm.vec_dist], [vec_arm.arm])
+  5 - output([mm_doc_chunks.chunk_uid], [mm_doc_chunks.doc_id], [mm_doc_chunks.doc_kind], [mm_doc_chunks.path], [mm_doc_chunks.start_line], [mm_doc_chunks.end_line],
+       [mm_doc_chunks.content_hash], [mm_doc_chunks.content], [NULL], [l2_distance(mm_doc_chunks.embedding, cast('[-0.075165,0.000000,0.000000,0.000000,0.075165,
+      0.000000,0.000000,0.000000,0.075165,0.075165,-0.075165,0.000000,-0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.075165,-0.075165,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,-0.075165,0.150329,
+      0.000000,0.000000,0.000000,0.000000,-0.075165,-0.150329,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.075165,-0.075165,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.150329,0.000000,0.000000,0.000000,0.075165,0.000000,0.225494,0.000000,0.000000,-0.075165,
+      0.000000,0.075165,-0.075165,-0.075165,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,-0.075165,0.000000,0.150329,-0.075165,-0.075165,0.000000,0.000000,0.000000,-0.075165,0.225494,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,
+      -0.075165,0.000000,-0.150329,0.000000,-0.075165,0.000000,0.000000,-0.075165,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      -0.075165,0.000000,-0.225494,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,-0.225494,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.075165,0.000000,0.000000,0.000000,-0.225494,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,-0.075165,0.000000,0.000000,0.075165,0.075165,
+      0.000000,0.000000,-0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,-0.075165,0.000000,
+      -0.075165,0.000000,0.000000,-0.075165,0.000000,0.000000,-0.075165,0.000000,0.000000,0.075165,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,-0.075165,0.075165,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,-0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,-0.075165,0.000000,0.000000,0.075165,0.000000,0.000000,0.225494,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,
+      0.075165,0.000000,-0.075165,0.075165,0.000000,0.000000,-0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.075165,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,-0.150329,0.000000,0.000000,-0.150329,0.000000,0.000000,0.000000,0.000000,0.075165,0.225494,
+      -0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.150329,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,-0.075165,0.075165,-0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,-0.150329,-0.075165,
+      -0.225494,0.000000,0.000000,0.075165,0.000000,-0.075165,0.000000,-0.075165,0.000000,-0.075165,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,
+      0.000000,0.000000,0.000000,0.000000,0.000000]', ARRAY(18, -1)))], ['vector']), filter([mm_doc_chunks.is_current = 1]), rowset=16
+      access([mm_doc_chunks.__pk_increment], [mm_doc_chunks.embedding], [mm_doc_chunks.is_current], [mm_doc_chunks.chunk_uid], [mm_doc_chunks.doc_id], [mm_doc_chunks.doc_kind],
+       [mm_doc_chunks.path], [mm_doc_chunks.start_line], [mm_doc_chunks.end_line], [mm_doc_chunks.content_hash], [mm_doc_chunks.content]), partitions(p0)
+      is_index_back=true, is_global_index=false, filter_before_indexback[false], 
+      range_key([mm_doc_chunks.__pk_increment]), range(MIN ; MAX)always true
+{
+  "fulltext_index_used": true,
+  "vector_index_used": true
+}
+exit_code: 0

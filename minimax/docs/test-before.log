@@ -1,0 +1,115 @@
+# mmctx test log
+label: test-before
+utc: 2026-10-31T15:34:31+00:00
+command: /mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m pytest -q
+cwd: /mnt/d/pc-work/wt-eco3/minimax/demo_project
+commit: e966688a4cd3cb603105dcdedd5288c668dc56e0
+git_status: ?? minimax/devlog/
+?? minimax/docs/
+?? minimax/out/
+tests_sha256: 794af6b9a1ba7ef403a965e92580993f93a637b215195c7a9068116952129f20
+exit_code: 1
+
+.FFFFFFFFF.....                                                          [100%]
+=================================== FAILURES ===================================
+____________________________ test_filter_by_status _____________________________
+
+    def test_filter_by_status():
+>       assert _ids(filter_orders(_orders(), statuses={"paid"})) == ["o2", "o4", "o5"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o2', 'o4', 'o5']
+E         
+E         At index 0 diff: 'o1' != 'o2'
+E         Left contains 2 more items, first extra item: 'o4'
+E         Use -v to get more diff
+
+tests/test_filters.py:33: AssertionError
+_____________________ test_min_total_uses_discounted_total _____________________
+
+    def test_min_total_uses_discounted_total():
+        # o1 9000>=9000；o2 应付 10800；o4 原价 10000 但应付 8500，应被排除。
+>       assert _ids(filter_orders(_orders(), min_total_cents=9000)) == ["o1", "o2"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o1', 'o2']
+E         
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:38: AssertionError
+_________________________ test_min_total_is_inclusive __________________________
+
+    def test_min_total_is_inclusive():
+>       assert _ids(filter_orders(_orders(), statuses={"paid"}, min_total_cents=8500)) == ["o2", "o4"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o2', 'o4']
+E         
+E         At index 0 diff: 'o1' != 'o2'
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:42: AssertionError
+_________________________ test_filter_by_member_levels _________________________
+
+    def test_filter_by_member_levels():
+>       assert _ids(filter_orders(_orders(), member_levels={"silver", "platinum"})) == ["o3", "o4"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o3', 'o4']
+E         
+E         At index 0 diff: 'o1' != 'o3'
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:46: AssertionError
+________________________ test_filters_combine_with_and _________________________
+
+    def test_filters_combine_with_and():
+        result = filter_orders(_orders(), statuses={"paid"}, min_total_cents=9000, exclude_ids={"o2"})
+>       assert result == []
+E       AssertionError: assert [Order(order_...t_cents=5000)] == []
+E         
+E         Left contains 5 more items, first extra item: Order(order_id='o1', status='pending', member_level='regular', amount_cents=9000)
+E         Use -v to get more diff
+
+tests/test_filters.py:51: AssertionError
+_______________________________ test_exclude_ids _______________________________
+
+    def test_exclude_ids():
+>       assert _ids(filter_orders(_orders(), statuses={"paid"}, exclude_ids={"o2"})) == ["o4", "o5"]
+E       AssertionError: assert ['o1', 'o2', 'o3', 'o4', 'o5'] == ['o4', 'o5']
+E         
+E         At index 0 diff: 'o1' != 'o4'
+E         Left contains 3 more items, first extra item: 'o3'
+E         Use -v to get more diff
+
+tests/test_filters.py:55: AssertionError
+________________________ test_empty_set_matches_nothing ________________________
+
+    def test_empty_set_matches_nothing():
+>       assert filter_orders(_orders(), statuses=set()) == []
+E       AssertionError: assert [Order(order_...t_cents=5000)] == []
+E         
+E         Left contains 5 more items, first extra item: Order(order_id='o1', status='pending', member_level='regular', amount_cents=9000)
+E         Use -v to get more diff
+
+tests/test_filters.py:59: AssertionError
+____________________ test_unknown_status_raises_value_error ____________________
+
+    def test_unknown_status_raises_value_error():
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_filters.py:63: Failed
+_____________ test_unknown_member_level_filter_raises_value_error ______________
+
+    def test_unknown_member_level_filter_raises_value_error():
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_filters.py:68: Failed
+=========================== short test summary info ============================
+FAILED tests/test_filters.py::test_filter_by_status - AssertionError: assert ...
+FAILED tests/test_filters.py::test_min_total_uses_discounted_total - Assertio...
+FAILED tests/test_filters.py::test_min_total_is_inclusive - AssertionError: a...
+FAILED tests/test_filters.py::test_filter_by_member_levels - AssertionError: ...
+FAILED tests/test_filters.py::test_filters_combine_with_and - AssertionError:...
+FAILED tests/test_filters.py::test_exclude_ids - AssertionError: assert ['o1'...
+FAILED tests/test_filters.py::test_empty_set_matches_nothing - AssertionError...
+FAILED tests/test_filters.py::test_unknown_status_raises_value_error - Failed...
+FAILED tests/test_filters.py::test_unknown_member_level_filter_raises_value_error
+9 failed, 6 passed in 1.07s

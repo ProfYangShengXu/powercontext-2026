@@ -1,0 +1,200 @@
+[system]
+你是企业项目里的开发助手。你会收到一份上下文包，里面是任务需要的规格、业务代码和测试。
+请按规格修改业务代码，让目标测试从失败变为通过，同时不破坏其他行为。
+
+输出格式（二选一，优先第一种）：
+A. 直接输出修改后的**完整** `demo_project/shop/filters.py`，放在一个 ```python 代码块里。
+   代码块里必须是从模块 docstring 开始的完整文件，不能省略任何已有函数或 import。
+B. 如果你确定能写对 unified diff，也可以输出 ```diff 代码块；hunk 头
+   `@@ -旧起点,旧行数 +新起点,新行数 @@` 的计数必须与实际列出的行数完全一致。
+
+硬性规则：
+1. 只允许改一个文件：demo_project/shop/filters.py。不许改 pricing.py、models.py、tests/、pytest.ini。
+2. 应付金额必须调用 `from shop.pricing import total_cents` 得到的 `total_cents(order)`；
+   新增 import 放在 `from shop.models import Order` 之后。
+2.1 合法枚举只存在于 `shop.models` 的 `STATUSES` 与 `MEMBER_LEVELS` **元组**（上下文包里有），
+   比较时用 `set(STATUSES)` / `set(MEMBER_LEVELS)`。禁止使用 `Order.Status`、`OrderStatus`、
+   枚举 `.value` 等上下文中不存在的符号；元组不能直接做集合减法，先 `set()`。
+3. 不得修改或删除 `def filter_orders(...)` 的既有参数，只能在参数列表末尾追加
+   `min_total_cents`、`member_levels`、`exclude_ids`（statuses 已存在）。
+4. 四个条件全部为 None 时不筛选，返回**新的** list 且保持输入顺序；
+   空集合表示「没有订单满足」，与该参数为 None 不同。判断是否生效必须写
+   `if statuses is not None:`（同理 member_levels / exclude_ids），
+   **禁止**写 `if statuses:` / `if not statuses:` 这类真值判断——空集合是假值，
+   会把「一个都不匹配」错当成「不筛选」。
+5. min_total_cents 是「应付金额 >= 下限」（含等于），不是原价比较。
+6. statuses / member_levels 里出现合法枚举之外的值必须抛 ValueError；
+   exclude_ids 里不存在的 id 要安全忽略。
+7. 不引入第三方依赖，不加规格之外的类型检查，不写文件、不联网、不打印。
+8. 只输出代码块，不要解释、总结或测试输出。
+
+
+[user]
+任务编号：s1-order-filter
+任务：订单筛选：按状态、应付金额下限、会员等级与排除名单过滤
+需求 / 现象：demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试
+demo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、
+member_levels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的
+应付金额且为「大于等于」；空集合与 None 语义不同；非法枚举抛 ValueError；保持输入顺序。
+测试文件是验收依据，不得修改。
+
+关键词：订单筛选、filter_orders、会员等级、应付金额下限、statuses、min_total_cents
+
+上下文包（每条来源都带 路径:起止行 (hash)，可直接对照）：
+
+# 上下文包 · s1-order-filter
+
+- 任务：订单筛选：按状态、应付金额下限、会员等级与排除名单过滤
+- 检索：订单筛选：按状态、应付金额下限、会员等级与排除名单过滤 demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试
+demo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、
+member_levels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的
+应付金额且为「大于等于」；空集合与 None 语义不同；非法枚举抛 ValueError；保持输入顺序。
+测试文件是验收依据，不得修改。
+ 订单筛选 filter_orders 会员等级 应付金额下限 statuses min_total_cents
+- spec_digest：`28dfab7c340b059eb13318d452faed82`
+- 预算：12000 tokens（估算使用 966）
+- 来源数：12（spec 4 / code 6 / test 2）
+
+## 1. [spec] corpus/specs/S-02-filtering.md:9-10 (hash 8ed7f7727b69c850)
+
+```markdown
+## 金额比较
+min_total_cents 比较的是订单的应付金额（即 shop.pricing.total_cents(order) 的结果），不是 amount_cents 原价。比较使用大于等于：应付金额 ≥ min_total_cents 即满足条件。这样会员折扣会真实影响筛选结果。
+```
+
+## 2. [spec] corpus/specs/S-03-testing.md:12-13 (hash e8ed8afabdf94e87)
+
+```markdown
+## 覆盖范围
+目标测试覆盖筛选的四类条件、组合条件、空集合与非法值；回归测试覆盖会员折扣与应付金额计算的既有行为。
+```
+
+## 3. [spec] corpus/specs/S-02-filtering.md:6-7 (hash 765b4f3a7c542223)
+
+```markdown
+## 筛选条件
+四个条件全部为可选参数，默认 None 表示该条件不生效。多个条件之间是逻辑与（AND）：一条订单必须同时满足全部已给出的条件才会被返回。statuses 与 member_levels 是字符串集合；min_total_cents 是整数下限；exclude_ids 是要排除的 order_id 集合。
+```
+
+## 4. [spec] corpus/specs/S-01-domain.md:12-13 (hash 00bc172d9369d242)
+
+```markdown
+## 会员等级与折扣
+会员等级只有四个合法取值：regular、silver、gold、platinum，定义在 MEMBER_LEVELS 元组中。对应折扣千分数分别是 0、50、100、150，即 0%、5%、10%、15%。应付金额 = amount_cents × (1000 - 折扣千分数) ÷ 1000，并按 half-up 规则四舍五入到整分。
+```
+
+## 5. [code] demo_project/shop/filters.py:11-20 (hash 29b6ec6a766a077f)
+
+```python
+def filter_orders(
+    orders: list[Order],
+    *,
+    statuses: set[str] | None = None,
+    min_total_cents: int | None = None,
+    member_levels: set[str] | None = None,
+    exclude_ids: set[str] | None = None,
+) -> list[Order]:
+    """按状态、应付金额下限、会员等级筛选订单，保持输入顺序。"""
+    return list(orders)
+```
+
+## 6. [code] demo_project/shop/pricing.py:1-5 (hash a9f7dca58033fcc5)
+
+```python
+"""金额计算：会员折扣与应付总额。"""
+
+from __future__ import annotations
+
+from shop.models import MEMBER_DISCOUNT_PERMILLE, MEMBER_LEVELS, Order
+```
+
+## 7. [code] demo_project/shop/models.py:26-35 (hash 5701a7955b2fb26e)
+
+```python
+class Order:
+    """一条订单。
+
+    amount_cents 是商品原价（单位：分）；应付金额按会员折扣另算，见 shop.pricing。
+    """
+
+    order_id: str
+    status: str
+    member_level: str
+    amount_cents: int
+```
+
+## 8. [code] demo_project/shop/filters.py:1-8 (hash dcdc6038c913810c)
+
+```python
+"""订单筛选。
+
+目标行为见 corpus/specs/S-02-filtering.md；本文件当前是尚未实现的占位实现。
+"""
+
+from __future__ import annotations
+
+from shop.models import Order
+```
+
+## 9. [test] demo_project/tests/test_pricing.py:1-6 (hash cfd9e3f3e1c99f85)
+
+```python
+"""回归测试：会员折扣与应付金额的既有行为（改前改后都必须绿）。"""
+
+from __future__ import annotations
+
+from shop.models import Order
+from shop.pricing import discount_permille, total_cents
+```
+
+## 10. [code] demo_project/shop/pricing.py:15-22 (hash a4540b71bd243cb3)
+
+```python
+def total_cents(order: Order) -> int:
+    """应付金额（分），四舍五入到整分（half-up）。
+
+    total = amount_cents * (1000 - discount_permille) / 1000
+    """
+    rate = discount_permille(order.member_level)
+    numerator = order.amount_cents * (1000 - rate)
+    return (numerator + 500) // 1000
+```
+
+## 11. [code] demo_project/shop/models.py:1-25 (hash 0a73ac8acfcf453a)
+
+```python
+"""订单领域模型：字段、状态与会员等级。"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+STATUS_PENDING = "pending"
+STATUS_PAID = "paid"
+STATUS_SHIPPED = "shipped"
+STATUS_CANCELLED = "cancelled"
+
+STATUSES = (STATUS_PENDING, STATUS_PAID, STATUS_SHIPPED, STATUS_CANCELLED)
+
+MEMBER_LEVELS = ("regular", "silver", "gold", "platinum")
+
+# 折扣率用千分数表示，避免浮点误差：50 表示 5%。
+MEMBER_DISCOUNT_PERMILLE = {
+    "regular": 0,
+    "silver": 50,
+    "gold": 100,
+    "platinum": 150,
+}
+
+
+@dataclass(frozen=True)
+```
+
+## 12. [test] demo_project/tests/test_filters.py:32-33 (hash fdd8e2279c656eb8)
+
+```python
+def test_filter_by_status():
+    assert _ids(filter_orders(_orders(), statuses={"paid"})) == ["o2", "o4", "o5"]
+```
+
+请给出让 demo_project/tests 下目标测试通过的最小改动。再强调一次：只改 demo_project/shop/filters.py，优先输出完整新文件（```python）。

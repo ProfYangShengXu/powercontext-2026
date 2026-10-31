@@ -1,0 +1,43 @@
+# 状态复用（跨进程）
+说明：demo 里每个 mmctx 子命令都是独立进程（make 每行一条 shell），state 与 resume 不共享内存；
+resume 只通过 PowerContext /v1/memory/entries/list 读回。
+
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli state --run-id final4 --task samples/s1-order-filter/task.yaml --context out/s1-order-filter.json \
+  --status applied --todo "补丁已应用并通过目标测试" --todo "等待回归与验收"
+{
+  "applied_commit": "ad24f11f67d869d45f14b663fbe292893bdc9fa0",
+  "entry_id": "mem_ent_fa65f53b2cb04c639f0ceed915143476",
+  "run_id_from_state": "final4",
+  "seq": 4,
+  "state_bytes_utf8": 483,
+  "state_sha256": "c6ae158fbeab182f1b6c07f911ef1396",
+  "task_id": "s1-order-filter",
+  "truncated": false,
+  "unchanged": false,
+  "version": 1
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli resume --run-id final4 --task samples/s1-order-filter/task.yaml
+{
+  "applied_commit": "ad24f11f67d869d45f14b663fbe292893bdc9fa0",
+  "current_spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "entry_id": "mem_ent_fa65f53b2cb04c639f0ceed915143476",
+  "found": true,
+  "next_action": "可以继续",
+  "run_id_from_state": "final4",
+  "seq": 4,
+  "stale": false,
+  "state_spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "task_id": "s1-order-filter",
+  "todo": [
+    "补丁已应用并通过目标测试",
+    "等待回归与验收"
+  ],
+  "version": 1
+}
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli verify --run-id final4 --context out/s1-order-filter.json --run final4
+{
+  "checked": 13,
+  "context": "out/s1-order-filter.json",
+  "ok": true,
+  "run": "final4"
+}

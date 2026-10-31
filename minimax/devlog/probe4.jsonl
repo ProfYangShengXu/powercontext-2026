@@ -1,0 +1,1 @@
+{"code": "expected_sources_missing", "missing": ["demo_project/shop/pricing.py#total_cents: symbol not present in cited chunks"], "run_id": "probe4", "step": "error", "ts": "2026-10-31T15:12:49+00:00"}

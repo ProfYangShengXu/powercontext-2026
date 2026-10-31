@@ -1,0 +1,25 @@
+# 规格更新 → 重新导入 → 上下文必须用新内容（A1）
+
+commit: `ad24f11f67d869d45f14b663fbe292893bdc9fa0`
+
+0) 归一化：对当前提交态重新 import + context
+   import exit=0
+   context exit=0
+
+1) 改 S-02-filtering.md 的「## 金额比较」段：
+   - 旧: min_total_cents 比较的是订单的应付金额（即 shop.pricing.total_cents(order) 的结果），不是 amount_cents 原价。
+   + 新: 【时效性验证】min_total_cents 比较的是折扣后的应付金额，旧表述已作废。
+
+2) mmctx import（同 doc_id 新块 current，旧块 is_current=0）exit=0
+   db: chunks=49 current=46 spec_digest=48de8c46c63b63d69316a46db80229e7
+
+3) mmctx context exit=0
+   - 包内命中新句子: True
+   - 包内仍含旧句子: False
+   PASS：规格更新后输出的是新内容，旧句子不再出现
+
+4) 还原 S-02 并重新导入（回到交付状态）
+   import exit=0
+   context exit=0
+   - 旧句子恢复: True；新句子消失: True
+   PASS：还原后检索回到交付内容

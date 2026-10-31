@@ -1,0 +1,34 @@
+# 上下文包与来源反查（RUN_ID=final4）
+command: make context; make verify
+
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli context --run-id final4 --task samples/s1-order-filter/task.yaml
+{
+  "base_commit": "e966688a4cd3cb603105dcdedd5288c668dc56e0",
+  "context_sha256": "c8ca9881aa2dde8abb5f16357743f1d97cdeb9dc446d3acec192131dfa7f8d9b",
+  "counts": {
+    "code": 6,
+    "spec": 4,
+    "test": 2
+  },
+  "latency_ms": 6372,
+  "pack": "out/s1-order-filter.json",
+  "pack_md": "out/s1-order-filter.md",
+  "run_id": "final4",
+  "sources": 12,
+  "spec_digest": "28dfab7c340b059eb13318d452faed82",
+  "statements_in_search": 1,
+  "task_id": "s1-order-filter",
+  "used_tokens": 966,
+
+## verify（来源反查 + 补丁重放），exit_code=0
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m mmctx.cli verify --run-id final4 --context out/s1-order-filter.json --run final4
+{
+  "checked": 13,
+  "context": "out/s1-order-filter.json",
+  "ok": true,
+  "run": "final4"
+
+## 说明
+- out/s1-order-filter.json 是 HEAD 上重放的包（base_commit=ad24f11…），12 条来源全部可回查 DB。
+- final4 那次实际喂给模型的上下文原文在 devlog/final4.prompt.txt（含 system+user 全文），
+  context_sha256=c8ca9881aa2dde8abb5f16357743f1d97cdeb9dc446d3acec192131dfa7f8d9b。

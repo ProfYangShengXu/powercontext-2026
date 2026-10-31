@@ -1,0 +1,13 @@
+# mmctx 自身测试日志
+utc: 2026-10-31T15:40:49Z
+commit: ad24f11f67d869d45f14b663fbe292893bdc9fa0
+command: cd minimax && make test
+
+test -d .venv || python3 -m venv .venv
+.venv/bin/pip install -q -r requirements.txt
+WARNING: There was an error checking the latest version of pip.
+/mnt/d/pc-work/wt-eco3/minimax/.venv/bin/python -m pytest -q tests
+.....................................                                    [100%]
+37 passed in 20.35s
+
+exit_code: 0

@@ -6,6 +6,7 @@
 - 模型：`MiniMax-Text-01`
 - 端点：`https://api.minimax.chat/v1` + `/text/chatcompletion_v2`
 - 调用日期：2026-10-31（UTC）
+- 对应提交：`4fc7a68ce3addc7e7c7f08198e51e75bd920d8db`（`git show 4fc7a68ce -- minimax/mmctx/adapters/minimax_payload.py`）
 - 调用次数：3 轮（生成 → 按失败测试修正 → 再修正）
 - 生成脚本：`evidence/harness/generate.py`（读 `.env` 的 key，只放进
   `Authorization` 头；`request.json` 里已脱敏）

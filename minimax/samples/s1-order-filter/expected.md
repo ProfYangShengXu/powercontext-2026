@@ -12,6 +12,7 @@
 | 规格 | `corpus/specs/S-03-testing.md` | 测试文件不可修改、改前红必须是断言失败 |
 | 代码 | `demo_project/shop/filters.py` | 被修改的目标；当前是占位实现 |
 | 代码 | `demo_project/shop/pricing.py` | `total_cents` 是「应付金额」的唯一来源 |
+| 代码 | `demo_project/shop/models.py` | `STATUSES` / `MEMBER_LEVELS` 是合法枚举的唯一来源 |
 | 测试 | `demo_project/tests/test_filters.py` | 目标测试，验收依据 |
 | 测试 | `demo_project/tests/test_pricing.py` | 回归测试 |
 
@@ -30,8 +31,9 @@ assert not missing, missing
 PY
 ```
 
-机器判据同时写在 `tests/test_sample_expected.py`：它会读取真实索引结果，断言
-`expected_sources` 全部出现，并断言每条来源的 `chunk_uid` 都能在 seekdb 里回查。
+机器判据有两层：`cmd_context` 出包时直接校验 `expected_sources`（缺一条即 exit 3），
+`tests/test_sample_expected.py` 另外从真实索引复算一遍，并断言每条来源的 `chunk_uid`
+都能在 seekdb 里回查。当前包 12 条来源：spec 4 / code 6 / test 2（`docs/context-s1.log`）。
 
 ## 改前 / 改后
 
