@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 _FENCE = re.compile(r"```(?:diff|patch)\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
+_PY_FENCE = re.compile(r"```(?:python|py)\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 _THINK = re.compile(r"<think\b.*?</think\s*>", re.DOTALL | re.IGNORECASE)
 _FILE_HEADER = re.compile(r"^(?:\+\+\+|---)\s+(?:[ab]/)?(.+?)(?:\t.*)?$")
 _HUNK = re.compile(r"^@@ ", re.MULTILINE)
@@ -68,3 +69,29 @@ def guard_patch(diff: str, *, allowed_prefix: str = ALLOWED_PREFIX) -> tuple[lis
         elif not path.startswith(allowed_prefix):
             errors.append(f"{path}: patch must stay under {allowed_prefix}")
     return paths, errors
+
+
+TARGET_FILE = "demo_project/shop/filters.py"
+
+
+def extract_python_file(reply: str, *, marker: str = "def filter_orders(") -> str:
+    """模型直接给出完整新文件时的提取；只接受包含目标函数、体积最大的 python 块。"""
+    blocks = [match.group(1).strip("\n") + "\n" for match in _PY_FENCE.finditer(reply or "")]
+    blocks = [block for block in blocks if marker in block]
+    return max(blocks, key=len) if blocks else ""
+
+
+def build_file_diff(path: str, old: str, new: str) -> str:
+    """由旧文件与模型给出的新文件生成 unified diff（弱模型写整文件比写 diff 可靠）。"""
+    import difflib
+
+    if old == new:
+        return ""
+    lines = difflib.unified_diff(
+        old.splitlines(keepends=True),
+        new.splitlines(keepends=True),
+        fromfile=f"a/{path}",
+        tofile=f"b/{path}",
+        n=3,
+    )
+    return "".join(lines)

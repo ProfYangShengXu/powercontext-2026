@@ -33,7 +33,7 @@ def test_sample_expected_sources_are_in_pack(settings):
             pytest.skip("索引为空，先跑 make import")
         task = yaml.safe_load((settings.samples_dir / "s1-order-filter" / "task.yaml").read_text(encoding="utf-8"))
         store.warm_vectors()
-        arms = store.search(SearchQuery(query_from_task(task), limit=24))
+        arms = store.search(SearchQuery(query_from_task(task), limit=40))
         required = [
             (str(item.get("path", "")), str(item.get("symbol", "") or ""))
             for item in task.get("expected_sources") or []

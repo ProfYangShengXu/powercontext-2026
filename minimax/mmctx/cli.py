@@ -23,7 +23,7 @@ import yaml
 from mmctx.core.assembly import build_pack, check_expected_sources, query_from_task, render_markdown
 from mmctx.core.chunking import chunk_text, split_lines
 from mmctx.core.hashing import content_hash, corpus_digest, doc_id_for, sha256_hex
-from mmctx.core.patch import extract_diff, guard_patch
+from mmctx.core.patch import TARGET_FILE, build_file_diff, extract_diff, extract_python_file, guard_patch
 from mmctx.core.prompts import build_units
 from mmctx.core.selection import ensure_required, fuse, mentioned_paths
 from mmctx.core.state_model import build_state, is_stale, load_state, pack_state, state_hash
@@ -293,6 +293,18 @@ def _apply_workspace_guard(workspace: Any, diff: str) -> tuple[bool, str]:
     return True, ""
 
 
+def _target_tests(settings: Settings) -> tuple[int, str]:
+    """应用补丁后、提交前先跑目标测试；失败则回滚并让模型带着测试输出重试。"""
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q"],
+        cwd=settings.demo_project,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode, (result.stdout + result.stderr).rstrip()
+
+
 def cmd_run(args: argparse.Namespace, settings: Settings) -> int:
     from mmctx.bootstrap.main import build_bundle
 
@@ -345,7 +357,6 @@ def cmd_run(args: argparse.Namespace, settings: Settings) -> int:
         },
     )
     attempts: list[dict[str, Any]] = []
-    applied = False
     last_error = ""
     for attempt in range(1, args.retries + 2):
         try:
@@ -362,7 +373,25 @@ def cmd_run(args: argparse.Namespace, settings: Settings) -> int:
         raw_path = settings.devlog_dir / f"{run_id}.reply-{attempt}.txt"
         settings.devlog_dir.mkdir(parents=True, exist_ok=True)
         raw_path.write_text(reply.text, encoding="utf-8")
+
         diff = extract_diff(reply.text)
+        diff_source = "reply_diff"
+        if not diff:
+            candidate = extract_python_file(reply.text)
+            if candidate:
+                try:
+                    compile(candidate, TARGET_FILE, "exec")
+                except SyntaxError as error:
+                    last_error = f"模型给出的整文件无法通过 Python 语法检查：{error}"
+                else:
+                    old = (settings.root / TARGET_FILE).read_text(encoding="utf-8")
+                    diff = build_file_diff(TARGET_FILE, old, candidate)
+                    diff_source = "full_file"
+                    if not diff:
+                        last_error = "模型给出的整文件与当前文件相同，没有改动"
+            else:
+                last_error = "模型回复里既没有 diff，也没有完整的 filters.py"
+
         record = {
             "step": "model",
             "attempt": attempt,
@@ -375,13 +404,13 @@ def cmd_run(args: argparse.Namespace, settings: Settings) -> int:
             "reply_sha256": sha256_hex(reply.text, 64),
             "raw_reply": rel(raw_path, settings.root),
             "diff_present": bool(diff),
+            "patch_source": diff_source if diff else "",
         }
         attempts.append(record)
         devlog_write(settings, run_id, record)
 
-        if not diff:
-            last_error = "模型回复里没有 diff"
-        else:
+        ok = False
+        if diff:
             ok, last_error = _apply_workspace_guard(workspace, diff)
             patch_path = settings.devlog_dir / f"{run_id}.patch-{attempt}.diff"
             patch_path.write_text(diff, encoding="utf-8")
@@ -394,43 +423,72 @@ def cmd_run(args: argparse.Namespace, settings: Settings) -> int:
                     "paths": guard_patch(diff)[0],
                     "patch_sha256": sha256_hex(diff, 64),
                     "patch": rel(patch_path, settings.root),
+                    "patch_source": diff_source,
                     "applied": ok,
                     "error": last_error,
                 },
             )
             if ok:
-                applied = True
-                if args.commit:
-                    applied_commit = workspace.commit(
-                        f"fix(mmctx): implement {task['task_id']} via {settings.minimax_model}",
-                        guard_patch(diff)[0],
-                    )
-                else:
-                    applied_commit = ""
+                test_rc, test_tail = _target_tests(settings)
                 devlog_write(
                     settings,
                     run_id,
-                    {"step": "apply", "applied_commit": applied_commit, "base_commit": base_commit,
-                     "files": guard_patch(diff)[0]},
+                    {"step": "self_check", "attempt": attempt, "exit_code": test_rc,
+                     "tail": test_tail[-800:]},
                 )
-                print_json(
-                    {
-                        "run_id": run_id,
-                        "task_id": task["task_id"],
-                        "model": reply.model,
-                        "context_sha256": context_sha,
-                        "base_commit": base_commit,
-                        "applied_commit": applied_commit,
-                        "attempts": len(attempts),
-                        "files": guard_patch(diff)[0],
-                    }
-                )
-                return 0
+                if test_rc != 0:
+                    # 能 apply 不等于改对了：回滚，把失败测试回灌给模型，再试。
+                    workspace.revert(guard_patch(diff)[0])
+                    ok = False
+                    last_error = f"补丁能应用但目标测试失败（exit {test_rc}）：\n{test_tail[-1200:]}"
+                else:
+                    if args.commit:
+                        applied_commit = workspace.commit(
+                            f"fix(mmctx): implement {task['task_id']} via {settings.minimax_model}",
+                            guard_patch(diff)[0],
+                        )
+                    else:
+                        applied_commit = ""
+                    devlog_write(
+                        settings,
+                        run_id,
+                        {"step": "apply", "applied_commit": applied_commit, "base_commit": base_commit,
+                         "files": guard_patch(diff)[0], "patch_source": diff_source,
+                         "self_check_exit_code": test_rc},
+                    )
+                    print_json(
+                        {
+                            "run_id": run_id,
+                            "task_id": task["task_id"],
+                            "model": reply.model,
+                            "context_sha256": context_sha,
+                            "base_commit": base_commit,
+                            "applied_commit": applied_commit,
+                            "attempts": len(attempts),
+                            "patch_source": diff_source,
+                            "files": guard_patch(diff)[0],
+                        }
+                    )
+                    return 0
 
+        previous = reply.text
+        if len(previous) > 6000:
+            previous = previous[:6000] + "\n...(截断)"
+        hint = (
+            "请直接输出修改后的完整 demo_project/shop/filters.py，放在一个 ```python 代码块里；"
+            "不要输出 diff、解释或测试文件。"
+            if diff_source == "full_file" or not diff
+            else "请重新输出完整 unified diff；只改 demo_project/shop/filters.py；"
+            "hunk 头的行数必须与实际列出的行数完全一致；仍然不许改测试。"
+        )
         units = list(units) + [
             PromptUnit(
                 role="user",
-                text=f"上一次输出不能应用：{last_error}\n请重新输出完整 unified diff，仍然不许改测试。",
+                text=(
+                    f"上一次输出不能应用：{last_error}\n"
+                    "上一次输出如下（不要原样重复，只修正错误）：\n"
+                    f"{previous}\n{hint}"
+                ),
             )
         ]
 
@@ -715,14 +773,14 @@ def build_parser() -> argparse.ArgumentParser:
     ctx = sub.add_parser("context", help="组装上下文包并反查来源")
     ctx.add_argument("--task", required=True)
     ctx.add_argument("--run-id", default=None)
-    ctx.add_argument("--candidates", type=int, default=24)
+    ctx.add_argument("--candidates", type=int, default=40)
     ctx.set_defaults(func=cmd_context)
 
     run = sub.add_parser("run", help="调用 MiniMax 生成并应用补丁")
     run.add_argument("--task", required=True)
     run.add_argument("--context", required=True)
     run.add_argument("--run-id", default=None)
-    run.add_argument("--retries", type=int, default=2)
+    run.add_argument("--retries", type=int, default=3)
     run.add_argument("--commit", action="store_true")
     run.add_argument("--allow-dirty", action="store_true")
     run.set_defaults(func=cmd_run)
@@ -756,7 +814,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     explain = sub.add_parser("explain", help="打印候选 SQL 的 EXPLAIN")
     explain.add_argument("--task", required=True)
-    explain.add_argument("--candidates", type=int, default=24)
+    explain.add_argument("--candidates", type=int, default=40)
     explain.set_defaults(func=cmd_explain)
 
     check = sub.add_parser("check", help="分层判据：core/ports 不得 import 适配器/SDK")

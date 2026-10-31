@@ -26,6 +26,9 @@ expected_sources:
   - kind: code
     path: demo_project/shop/pricing.py
     symbol: total_cents
+  - kind: code
+    path: demo_project/shop/models.py
+    symbol: MEMBER_LEVELS
   - kind: test
     path: demo_project/tests/test_filters.py
     symbol: test_filter_by_status

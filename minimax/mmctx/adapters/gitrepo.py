@@ -58,6 +58,14 @@ class Workspace:
         result = self._run(["git", "apply", "--reverse", "--check", "--whitespace=nowarn", "-"], stdin=diff_text)
         return result.returncode == 0, (result.stderr or result.stdout).strip()
 
+    def revert(self, paths: list[str]) -> None:
+        """把指定路径恢复到 HEAD（补丁通过但目标测试失败时用）。"""
+        if not paths:
+            return
+        result = self._run(["git", "checkout", "--", *paths])
+        if result.returncode != 0:
+            raise GitError(result.stderr.strip() or "git checkout failed")
+
     def commit(self, message: str, paths: list[str]) -> str:
         add = self._run(["git", "add", "--", *paths])
         if add.returncode != 0:
