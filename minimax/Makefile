@@ -86,7 +86,7 @@ demo: init
 	$(MMCTX) state --run-id $(RUN_ID) --task $(SAMPLE) --context out/s1-order-filter.json \
 	  --status applied --todo "补丁已应用并通过目标测试" --todo "等待回归与验收"
 	$(MMCTX) resume --run-id $(RUN_ID) --task $(SAMPLE)
-	$(MMCTX) verify --run-id $(RUN_ID) --context out/s1-order-filter.json --run $(RUN)
+	$(MMCTX) verify --run-id $(RUN_ID) --context out/s1-order-filter.json --run $(RUN_ID)
 
 # 只清缓存；out/ 与 devlog/ 是证据，不在这里删。
 clean:
