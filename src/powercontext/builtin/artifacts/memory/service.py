@@ -668,6 +668,11 @@ class MemoryService:
                 )
         return await self._backend.changes(target.as_ref(), since_revision)
 
+    async def capabilities(self) -> MemoryCapabilities:
+        """Return the probed backend features for this deployment."""
+
+        return await self._backend.capabilities()
+
     @prompt_operation("memory.rerank")
     async def search(
         self,

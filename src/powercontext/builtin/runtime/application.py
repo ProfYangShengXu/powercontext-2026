@@ -56,6 +56,7 @@ from powercontext.builtin.artifacts.handoff import (
 from powercontext.builtin.artifacts.memory import (
     EmbeddingProfile,
     Memory,
+    MemoryCapabilities,
     MemoryCapacity,
     MemoryCitation,
     MemoryCompactionResult,
@@ -2461,6 +2462,12 @@ class ScopedMemoryApplication:
                     else await _last_changed_entry(service, updated)
                 ),
             )
+
+    async def capabilities(self) -> MemoryCapabilities:
+        """Return the backend features available to this scope's Memory."""
+
+        async with self._runtime._context(self.scope_id) as context:
+            return await context.artifacts.memory.capabilities()
 
     async def search(self, request: SearchMemoryRequest, /) -> MemorySearchPage:
         async with self._runtime._context(

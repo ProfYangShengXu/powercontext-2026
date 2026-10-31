@@ -367,20 +367,54 @@ async def _list_entries(memory: Any) -> tuple[Any, list[Any]]:
     ]
 
 
+async def _preferred_search_mode(memory: Any) -> str:
+    """Return the richest backend search mode the scoped Memory actually supports.
+
+    A hybrid backend adds a vector arm that lexical matching cannot replace, so it
+    is preferred when the probed capabilities advertise it.  Probing is best-effort:
+    any failure degrades to the historical ``fts`` mode instead of surfacing an
+    error to a caller who only asked a question.
+    """
+
+    probe = getattr(memory, "capabilities", None)
+    if probe is None:
+        return "fts"
+    try:
+        capabilities = await probe()
+    except Exception:  # noqa: BLE001 - a failed capability probe must never break retrieval.
+        return "fts"
+    if getattr(capabilities, "hybrid", False):
+        return "hybrid"
+    return "fts"
+
+
+async def _search_page(search_method: Any, query: str, mode: str, limit: int) -> tuple[Any, str]:
+    """Run one query, retrying in ``fts`` if the advertised hybrid mode is unavailable."""
+
+    from powercontext.builtin.runtime.models import SearchMemoryRequest
+
+    try:
+        return await search_method(SearchMemoryRequest(query=query, mode=mode, limit=limit)), mode
+    except Exception:  # noqa: BLE001 - fall back once; the caller handles a failing fts path.
+        if mode == "fts":
+            raise
+    return await search_method(SearchMemoryRequest(query=query, mode="fts", limit=limit)), "fts"
+
+
 async def _search_stage(memory: Any, question: str, limit: int) -> list[MemoryCitation]:
-    """Collect citations from the public FTS search for a few distilled queries."""
+    """Collect citations from the public search for a few distilled queries."""
 
     search_method = getattr(memory, "search", None)
     if search_method is None:
         return []
-    from powercontext.builtin.runtime.models import SearchMemoryRequest
     scores: dict[tuple[str, str, str, str], float] = {}
     order: list[tuple[str, str, str, str]] = []
     citations: dict[tuple[str, str, str, str], MemoryCitation] = {}
     candidate_limit = min(max(limit * 3, 30), 50)
+    mode = await _preferred_search_mode(memory)
     for query in _distilled_queries(question):
         try:
-            page = await search_method(SearchMemoryRequest(query=query, mode="fts", limit=candidate_limit))
+            page, mode = await _search_page(search_method, query, mode, candidate_limit)
         except Exception:  # noqa: BLE001 - a single failing query must not lose the others.
             continue
         for rank, hit in enumerate(getattr(page, "hits", ()), start=1):
