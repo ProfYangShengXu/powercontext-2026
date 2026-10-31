@@ -1,0 +1,37 @@
+{
+  "http_status": 200,
+  "latency_ms": 30862,
+  "body": {
+    "id": "0735323d1a6155b23a14038a5ac51c43",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "```python\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass(frozen=True)\nclass ParsedResponse:\n    text: str\n    finish_reason: str\n    usage: dict[str, object]\n    model: str\n    request_id: str\n    http_status: int\n\n\nclass PayloadError(Exception):\n    def __init__(self, message: str, *, code: str, retryable: bool, status_code: int = 0) -> None:\n        super().__init__(message)\n        self.code = code\n        self.retryable = retryable\n        self.status_code = status_code\n\n    def __repr__(self):\n        return f\"PayloadError(code={self.code!r}, retryable={self.retryable}, status_code={self.status_code}, message={self.args[0]!r})\"\n\n\ndef parse_response(\n    http_status: int,\n    body: object,\n    *,\n    raw_text: str = \"\",\n    request_id: str = \"\",\n    fallback_model: str = \"\",\n) -> ParsedResponse:\n    # Step 1: Check if body is not a dict\n    if not isinstance(body, dict):\n        raise PayloadError(\n            message=f\"Bad response: http_status={http_status}, raw_text={raw_text[:200]}\",\n            code=\"bad_response\",\n            retryable=(http_status >= 500 or http_status == 0),\n            status_code=http_status,\n        )\n\n    # Step 2: Handle non-200 HTTP status codes\n    if http_status != 200:\n        retryable = http_status in {408, 409, 429, 500, 502, 503, 504}\n        if \"error\" in body and isinstance(body[\"error\"], dict):\n            error_code = str(body[\"error\"].get(\"code\", f\"http_{http_status}\"))\n            error_message = body[\"error\"].get(\"message\", str(body[\"error\"]))\n        elif \"base_resp\" in body and isinstance(body[\"base_resp\"], dict) and \"status_msg\" in body[\"base_resp\"]:\n            error_message = body[\"base_resp\"][\"status_msg\"]\n            error_code = \"base_resp_error\"\n        else:\n            error_message = raw_text[:300] if raw_text else repr(body)\n            error_code = f\"http_{http_status}\"\n        raise PayloadError(\n            message=error_message,\n            code=error_code,\n            retryable=retryable,\n            status_code=http_status,\n        )\n\n    # Step 3: Handle base_resp status code\n    base_resp = body.get(\"base_resp\", {})\n    sc = int(base_resp.get(\"status_code\", 0) or 0)\n    if sc != 0:\n        code = f\"minimax_{sc}\"\n        retryable = sc in {1000, 1001, 1002, 1024, 1033, 2056, 2062, 2064, 2066}\n        message = base_resp.get(\"status_msg\", f\"MiniMax business error {sc}\")\n        raise PayloadError(\n            message=message,\n            code=code,\n            retryable=retryable,\n            status_code=200,\n        )\n\n    # Step 4: Check if choices is empty\n    choices = body.get(\"choices\", [])\n    if not choices:\n        raise PayloadError(\n            message=\"Empty choices\",\n            code=\"empty_choices\",\n            retryable=True,\n            status_code=200,\n        )\n\n    # Step 5: Extract choice details\n    choice = choices[0]\n    message = choice.get(\"message\", {})\n    content = str(message.get(\"content\", \"\"))\n    finish_reason = str(choice.get(\"finish_reason\", \"\"))\n\n    # Step 6: Check if content is empty\n    if not content.strip():\n        raise PayloadError(\n            message=f\"Empty content, finish_reason={finish_reason}, possibly due to thinking token limit\",\n            code=\"empty_content\",\n            retryable=True,\n            status_code=200,\n        )\n\n    # Step 7: Successful parsing\n    usage = body.get(\"usage\", {})\n    if not isinstance(usage, dict):\n        usage = {}\n    model = str(body.get(\"model\", fallback_model))\n    rid = request_id or str(body.get(\"id\", \"\"))\n    return ParsedResponse(\n        text=content,\n        finish_reason=finish_reason,\n        usage=usage,\n        model=model,\n        request_id=rid,\n        http_status=http_status,\n    )\n```",
+          "role": "assistant",
+          "name": "MiniMax AI",
+          "audio_content": ""
+        }
+      }
+    ],
+    "created": 1793457981,
+    "model": "MiniMax-Text-01",
+    "object": "chat.completion",
+    "usage": {
+      "total_tokens": 2581,
+      "total_characters": 0,
+      "prompt_tokens": 1647,
+      "completion_tokens": 934
+    },
+    "input_sensitive": false,
+    "output_sensitive": false,
+    "input_sensitive_type": 0,
+    "output_sensitive_type": 0,
+    "output_sensitive_int": 0,
+    "base_resp": {
+      "status_code": 0,
+      "status_msg": ""
+    }
+  }
+}

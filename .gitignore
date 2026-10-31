@@ -1,0 +1,7 @@
+# mmctx 运行时产物（不进版本库）
+.scratch/
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/

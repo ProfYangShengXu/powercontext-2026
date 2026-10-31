@@ -1,0 +1,33 @@
+task_id: s1-order-filter
+title: "订单筛选：按状态、应付金额下限、会员等级与排除名单过滤"
+symptoms: |
+  demo_project/shop/filters.py 的 filter_orders 目前直接返回全部订单，目标测试
+  demo_project/tests/test_filters.py 失败。需要按规格实现：statuses、min_total_cents、
+  member_levels、exclude_ids 四个条件；条件之间是 AND；min_total_cents 比较的是折扣后的
+  应付金额且为「大于等于」；空集合与 None 语义不同；非法枚举抛 ValueError；保持输入顺序。
+  测试文件是验收依据，不得修改。
+keywords:
+  - 订单筛选
+  - filter_orders
+  - 会员等级
+  - 应付金额下限
+  - statuses
+  - min_total_cents
+expected_sources:
+  - kind: spec
+    path: corpus/specs/S-02-filtering.md
+  - kind: spec
+    path: corpus/specs/S-01-domain.md
+  - kind: spec
+    path: corpus/specs/S-03-testing.md
+  - kind: code
+    path: demo_project/shop/filters.py
+    symbol: filter_orders
+  - kind: code
+    path: demo_project/shop/pricing.py
+    symbol: total_cents
+  - kind: test
+    path: demo_project/tests/test_filters.py
+    symbol: test_filter_by_status
+  - kind: test
+    path: demo_project/tests/test_pricing.py

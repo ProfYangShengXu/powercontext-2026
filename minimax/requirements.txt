@@ -1,0 +1,6 @@
+pylibseekdb==1.4.0.post2
+PyMySQL==1.2.3
+httpx==0.28.1
+PyYAML==6.0.3
+pytest==9.2.0
+powercontext[cli,server]==1.2.0

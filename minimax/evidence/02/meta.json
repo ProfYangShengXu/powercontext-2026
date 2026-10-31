@@ -1,0 +1,17 @@
+{
+  "model": "MiniMax-Text-01",
+  "base_url": "https://api.minimax.chat/v1",
+  "path": "/text/chatcompletion_v2",
+  "http_status": 200,
+  "latency_ms": 32057,
+  "usage": {
+    "total_tokens": 2787,
+    "total_characters": 0,
+    "prompt_tokens": 1891,
+    "completion_tokens": 896
+  },
+  "finish_reason": "stop",
+  "target": "mmctx/adapters/minimax_payload.py",
+  "bytes_written": 3625,
+  "request_id": ""
+}

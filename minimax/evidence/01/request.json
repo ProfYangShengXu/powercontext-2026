@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-10-31T14:46:20+00:00",
+  "method": "POST",
+  "url": "https://api.minimax.chat/v1/text/chatcompletion_v2",
+  "headers": {
+    "Authorization": "Bearer <MINIMAX_API_KEY 已省略>",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "model": "MiniMax-Text-01",
+    "messages": [
+      {
+        "role": "user",
+        "content": "# 交给 MiniMax-Text-01 的生成任务（第 1 轮）\n\n模块：`minimax/mmctx/adapters/minimax_payload.py`\n目标：把 MiniMax `chatcompletion_v2` 的 HTTP 响应解析成结构化结果，或抛出可分类的 `PayloadError`。\n\n---\n\n请只输出一个 ```python 代码块，内容是**完整文件**，不要解释、不要举例、不要额外文字。\n\n## 接口\n\n```python\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass(frozen=True)\nclass ParsedResponse:\n    text: str\n    finish_reason: str\n    usage: dict[str, object]\n    model: str\n    request_id: str\n    http_status: int\n\n\nclass PayloadError(Exception):\n    def __init__(self, message: str, *, code: str, retryable: bool, status_code: int = 0) -> None:\n        ...\n    # 必须有可读属性：code: str、retryable: bool、status_code: int\n\n\ndef parse_response(\n    http_status: int,\n    body: object,\n    *,\n    raw_text: str = \"\",\n    request_id: str = \"\",\n    fallback_model: str = \"\",\n) -> ParsedResponse:\n    ...\n```\n\n## 解析规则（严格按顺序执行）\n\n1. `body` 不是 dict（None / list / str / int 等）→ 抛 `PayloadError(code=\"bad_response\", retryable=(http_status >= 500 or http_status == 0), status_code=http_status)`，消息里包含 `http_status` 与 `raw_text` 前 200 字符。\n2. `http_status != 200`：\n   - `retryable = http_status in {408, 409, 429, 500, 502, 503, 504}`；\n   - 若 `body[\"error\"]` 是 dict：`code = str(error.get(\"code\") or f\"http_{http_status}\")`，消息取 `error.get(\"message\")` 或 `str(error)`；\n   - 否则若 `body[\"base_resp\"]` 是 dict 且有 `status_msg`：消息取它；\n   - 否则消息取 `raw_text[:300]`，没有就取 `repr(body)`；\n   - 抛 `PayloadError`，`status_code=http_status`。\n3. `base_resp = body.get(\"base_resp\") or {}`，`sc = int(base_resp.get(\"status_code\", 0) or 0)`（注意可能是字符串）。\n   若 `sc != 0`：`code=f\"minimax_{sc}\"`，`retryable = sc in {1000, 1001, 1002, 1024, 1033, 2056, 2062, 2064, 2066}`，消息取 `base_resp.get(\"status_msg\")` 或 `f\"MiniMax business error {sc}\"`，`status_code=200`。\n4. `choices = body.get(\"choices\") or []`；为空 → `PayloadError(code=\"empty_choices\", retryable=True, status_code=200)`。\n5. `choice = choices[0]`；`message = choice.get(\"message\") or {}`；`content = str(message.get(\"content\") or \"\")`；`finish_reason = str(choice.get(\"finish_reason\") or \"\")`。\n6. `content.strip()` 为空 → `PayloadError(code=\"empty_content\", retryable=True, status_code=200)`，消息中包含 `finish_reason`，并提示 thinking token 可能吃掉了输出上限。\n7. 成功：`usage = body.get(\"usage\")`，不是 dict 就用 `{}`；`model = str(body.get(\"model\") or fallback_model)`；`rid = request_id or str(body.get(\"id\") or \"\")`；返回 `ParsedResponse(content, finish_reason, usage, model, rid, http_status)`。\n\n## 边界要求\n\n- `http_status` 与 `base_resp.status_code` 可能是字符串，转 int 要容错；\n- `content`、`status_msg`、`message`、`usage` 可能是 `None`；\n- 只允许标准库（`dataclasses` / `typing`），不得 import 项目内其他模块；\n- 不要在文件里写 `print`、`logging`、网络请求或文件读写。\n\n## 样例（用于自查，不要输出）\n\n输入 `(200, {\"id\": \"req-123\", \"model\": \"MiniMax-Text-01\", \"choices\": [{\"finish_reason\": \"stop\", \"message\": {\"content\": \"hello\"}}], \"usage\": {\"total_tokens\": 42}, \"base_resp\": {\"status_code\": 0}}, request_id=\"hdr-1\")`\n→ `ParsedResponse(\"hello\", \"stop\", {\"total_tokens\": 42}, \"MiniMax-Text-01\", \"hdr-1\", 200)`\n\n输入 `(200, {\"base_resp\": {\"status_code\": 1002, \"status_msg\": \"rate limit\"}})`\n→ `PayloadError(code=\"minimax_1002\", retryable=True, status_code=200)`\n\n输入 `(401, {\"error\": {\"code\": \"401\", \"message\": \"invalid api key\"}})`\n→ `PayloadError(code=\"401\", retryable=False, status_code=401)`\n"
+      }
+    ],
+    "max_tokens": 8192,
+    "temperature": 0.2,
+    "stream": false
+  }
+}

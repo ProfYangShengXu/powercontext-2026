@@ -1,0 +1,151 @@
+# 交给 MiniMax-Text-01 的第 2 轮修正
+
+上一次你生成的 `minimax/mmctx/adapters/minimax_payload.py` 有 2 个契约测试失败。
+请修正后输出**完整文件**，仍然只输出一个 ```python 代码块，不要解释。
+除下面两点外，其余逻辑保持上一版不变。
+
+## 失败 1：model 回退
+
+```
+    assert parse_response(200, body, fallback_model="MiniMax-Text-01").model == "MiniMax-Text-01"
+E   AssertionError: assert '' == 'MiniMax-Text-01'
+```
+原因：`body.get("model", fallback_model)` 在 `model` 存在但为空字符串时返回 `""`，
+不会回退。要求改成：`model = str(body.get("model") or fallback_model)`。
+
+## 失败 2：HTTP 非 200 且 body 不是 dict 时的错误分类
+
+```
+    with pytest.raises(PayloadError) as caught:
+        parse_response(503, None, raw_text="upstream unavailable")
+```
+要求：解析顺序调整为——
+1. 先看 `http_status != 200`：此时即使 body 不是 dict，也按 HTTP 状态分类，
+   `code=f"http_{http_status}"`，`retryable = http_status in {408,409,429,500,502,503,504}`，
+   消息优先取 `body["error"]` / `body["base_resp"]["status_msg"]`，没有就用 `raw_text[:300]`，
+   再没有用 `repr(body)`（body 不是 dict 也不会崩）。
+
+2. 只有 `http_status == 200` 且 body 不是 dict 时，才抛
+   `code="bad_response"`，`retryable=False`，消息含 `http_status` 与 `raw_text[:200]`。
+
+3. 其余规则（base_resp / choices / content / usage / request_id）不变。
+
+## 上一版实现（供你对照）
+
+```python
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class ParsedResponse:
+    text: str
+    finish_reason: str
+    usage: dict[str, object]
+    model: str
+    request_id: str
+    http_status: int
+
+
+class PayloadError(Exception):
+    def __init__(self, message: str, *, code: str, retryable: bool, status_code: int = 0) -> None:
+        super().__init__(message)
+        self.code = code
+        self.retryable = retryable
+        self.status_code = status_code
+
+    def __repr__(self):
+        return f"PayloadError(code={self.code!r}, retryable={self.retryable}, status_code={self.status_code}, message={self.args[0]!r})"
+
+
+def parse_response(
+    http_status: int,
+    body: object,
+    *,
+    raw_text: str = "",
+    request_id: str = "",
+    fallback_model: str = "",
+) -> ParsedResponse:
+    # Step 1: Check if body is not a dict
+    if not isinstance(body, dict):
+        raise PayloadError(
+            message=f"Bad response: http_status={http_status}, raw_text={raw_text[:200]}",
+            code="bad_response",
+            retryable=(http_status >= 500 or http_status == 0),
+            status_code=http_status,
+        )
+
+    # Step 2: Handle non-200 HTTP status codes
+    if http_status != 200:
+        retryable = http_status in {408, 409, 429, 500, 502, 503, 504}
+        if "error" in body and isinstance(body["error"], dict):
+            error_code = str(body["error"].get("code", f"http_{http_status}"))
+            error_message = body["error"].get("message", str(body["error"]))
+        elif "base_resp" in body and isinstance(body["base_resp"], dict) and "status_msg" in body["base_resp"]:
+            error_message = body["base_resp"]["status_msg"]
+            error_code = "base_resp_error"
+        else:
+            error_message = raw_text[:300] if raw_text else repr(body)
+            error_code = f"http_{http_status}"
+        raise PayloadError(
+            message=error_message,
+            code=error_code,
+            retryable=retryable,
+            status_code=http_status,
+        )
+
+    # Step 3: Handle base_resp status code
+    base_resp = body.get("base_resp", {})
+    sc = int(base_resp.get("status_code", 0) or 0)
+    if sc != 0:
+        code = f"minimax_{sc}"
+        retryable = sc in {1000, 1001, 1002, 1024, 1033, 2056, 2062, 2064, 2066}
+        message = base_resp.get("status_msg", f"MiniMax business error {sc}")
+        raise PayloadError(
+            message=message,
+            code=code,
+            retryable=retryable,
+            status_code=200,
+        )
+
+    # Step 4: Check if choices is empty
+    choices = body.get("choices", [])
+    if not choices:
+        raise PayloadError(
+            message="Empty choices",
+            code="empty_choices",
+            retryable=True,
+            status_code=200,
+        )
+
+    # Step 5: Extract choice details
+    choice = choices[0]
+    message = choice.get("message", {})
+    content = str(message.get("content", ""))
+    finish_reason = str(choice.get("finish_reason", ""))
+
+    # Step 6: Check if content is empty
+    if not content.strip():
+        raise PayloadError(
+            message=f"Empty content, finish_reason={finish_reason}, possibly due to thinking token limit",
+            code="empty_content",
+            retryable=True,
+            status_code=200,
+        )
+
+    # Step 7: Successful parsing
+    usage = body.get("usage", {})
+    if not isinstance(usage, dict):
+        usage = {}
+    model = str(body.get("model", fallback_model))
+    rid = request_id or str(body.get("id", ""))
+    return ParsedResponse(
+        text=content,
+        finish_reason=finish_reason,
+        usage=usage,
+        model=model,
+        request_id=rid,
+        http_status=http_status,
+    )
+```
