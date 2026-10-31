@@ -1,0 +1,25 @@
+拾遗 S1-S5 验证 · 2026-10-31 21:21:42
+项目: <project>
+
+== S1 启动应用 ==
+PASS S1 · 服务已启动 http://127.0.0.1:8001
+
+== S2 导入 sample_data ==
+PASS S2 · total_chunks=11 files=3
+
+== S3 混合检索「写放大」 ==
+PASS S3 · top=数据库笔记.md distance=0.0325 result_count=5
+
+== S4 写入薄弱点反馈 ==
+PASS S4 · artifact=atomic-memory/art_22ddf81c21a443ceb3f8825077ede157@1 source=studydesk-feedback-7243d5897b8046f4aa5624e409e6b40a
+
+== S5 重启应用并读取复习建议 ==
+PASS S5 · status=ready suggestions=4 knowledge_point=写放大
+hit=薄弱点复习：学习反馈中，用户把文档 x的「写放大总记混」标记为未掌握。备注：写放大总记混。原文线索：未在 seekdb 中找到原文，按备注记录。复习时优先回看这部分资料。
+
+日志尾操作: memory.remember,context.prepare
+
+结果: 5 PASS / 0 FAIL
+本次标记: 脚本验收-1793452902
+artifact: atomic-memory/art_22ddf81c21a443ceb3f8825077ede157@1
+日志: <project>/logs/
