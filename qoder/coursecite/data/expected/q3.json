@@ -1,0 +1,75 @@
+{
+  "id": "q3",
+  "query": "B+ 树为什么适合做数据库索引",
+  "filters": {
+    "course": null,
+    "max_lecture": null
+  },
+  "expect": {
+    "top_chunk_ids": [
+      "3de5fddb489d05eb",
+      "c3553473b043269c",
+      "fdc667e4ac810563",
+      "289191a9175d1135",
+      "7f8b60164149c89e",
+      "60dd4ff8bc492371",
+      "ed23b561686c3f67",
+      "23bae4ae906a1da3"
+    ],
+    "top_citations": [
+      {
+        "course": "CSC4180",
+        "lecture": 2,
+        "section": "2.1",
+        "page": 9
+      },
+      {
+        "course": "CSC4180",
+        "lecture": 2,
+        "section": "2.3",
+        "page": 15
+      },
+      {
+        "course": "CSC3170",
+        "lecture": 3,
+        "section": "3.3",
+        "page": 23
+      },
+      {
+        "course": "CSC5210",
+        "lecture": 6,
+        "section": "6.1",
+        "page": 41
+      },
+      {
+        "course": "CSC4180",
+        "lecture": 2,
+        "section": "2.2",
+        "page": 12
+      },
+      {
+        "course": "CSC3170",
+        "lecture": 3,
+        "section": "3.1",
+        "page": 17
+      },
+      {
+        "course": "CSC3170",
+        "lecture": 3,
+        "section": "3.2",
+        "page": 20
+      },
+      {
+        "course": "CSC4180",
+        "lecture": 7,
+        "section": "7.1",
+        "page": 49
+      }
+    ]
+  },
+  "must_match": {
+    "course": "CSC4180",
+    "lecture": 2,
+    "section": "2.1"
+  }
+}

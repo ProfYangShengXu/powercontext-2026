@@ -1,0 +1,75 @@
+{
+  "id": "q2",
+  "query": "MVCC 是怎么实现快照隔离的",
+  "filters": {
+    "course": null,
+    "max_lecture": null
+  },
+  "expect": {
+    "top_chunk_ids": [
+      "dcdfab88066bbcd1",
+      "8a48e4c7730a6c84",
+      "7a02044f05a0703a",
+      "39db91cb4298d798",
+      "d8dc1002f7a65a27",
+      "a9c55e673fdf6857",
+      "96b291869eec7c9a",
+      "941f98a56593e9f5"
+    ],
+    "top_citations": [
+      {
+        "course": "CSC4180",
+        "lecture": 4,
+        "section": "4.2",
+        "page": 28
+      },
+      {
+        "course": "CSC5210",
+        "lecture": 6,
+        "section": "6.3",
+        "page": 47
+      },
+      {
+        "course": "CSC3170",
+        "lecture": 6,
+        "section": "6.2",
+        "page": 44
+      },
+      {
+        "course": "CSC5210",
+        "lecture": 7,
+        "section": "7.3",
+        "page": 55
+      },
+      {
+        "course": "CSC5210",
+        "lecture": 2,
+        "section": "2.3",
+        "page": 15
+      },
+      {
+        "course": "CSC5210",
+        "lecture": 4,
+        "section": "4.1",
+        "page": 25
+      },
+      {
+        "course": "CSC3170",
+        "lecture": 7,
+        "section": "7.3",
+        "page": 55
+      },
+      {
+        "course": "CSC4180",
+        "lecture": 4,
+        "section": "4.3",
+        "page": 31
+      }
+    ]
+  },
+  "must_match": {
+    "course": "CSC4180",
+    "lecture": 4,
+    "section": "4.2"
+  }
+}

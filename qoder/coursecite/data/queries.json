@@ -1,0 +1,47 @@
+[
+  {
+    "id": "q1",
+    "query": "上次讲 HNSW 是在第几讲",
+    "must_match": {
+      "course": "CSC5210",
+      "lecture": 3,
+      "section": "3.1"
+    }
+  },
+  {
+    "id": "q2",
+    "query": "MVCC 是怎么实现快照隔离的",
+    "must_match": {
+      "course": "CSC4180",
+      "lecture": 4,
+      "section": "4.2"
+    }
+  },
+  {
+    "id": "q3",
+    "query": "B+ 树为什么适合做数据库索引",
+    "must_match": {
+      "course": "CSC4180",
+      "lecture": 2,
+      "section": "2.1"
+    }
+  },
+  {
+    "id": "q4",
+    "query": "动态规划的状态转移怎么确定",
+    "must_match": {
+      "course": "CSC3170",
+      "lecture": 6,
+      "section": "6.1"
+    }
+  },
+  {
+    "id": "q5",
+    "query": "RRF 的 k 取多少",
+    "must_match": {
+      "course": "CSC5210",
+      "lecture": 4,
+      "section": "4.1"
+    }
+  }
+]

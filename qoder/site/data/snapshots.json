@@ -1,0 +1,880 @@
+{
+  "schema": "coursecite.snapshot.v1",
+  "generated_at": "2026-10-31T17:46:11+00:00",
+  "index": {
+    "source": "seekdb LiveStore 真实检索",
+    "store_mode": "live",
+    "collection": "cc_chunks",
+    "chunks": 66,
+    "top_k": 8,
+    "embedding": "all-MiniLM-L6-v2 / 384d",
+    "retrieval": "seekdb HYBRID_SEARCH：全文 + 向量 + 过滤，库内 RRF"
+  },
+  "queries": [
+    {
+      "id": "q1",
+      "query": "上次讲 HNSW 是在第几讲",
+      "filters": {
+        "course": null,
+        "max_lecture": null
+      },
+      "limit": 8,
+      "elapsed_ms": 1826,
+      "channel": "hybrid",
+      "results": [
+        {
+          "rank": 1,
+          "chunk_id": "69434c3d5ded15c2",
+          "score": 0.0318,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "HNSW 是分层可导航小世界图，上层稀疏用于快速跳转，下层稠密用于精确收敛。插入时从最高层开始贪心找最近点，再逐层下降并连边；查询也走同样的路径，因此把检索复杂度从线性降到对数级。HNSW 的召回率与延迟由 ef 参数权衡。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 3,
+            "section": "3.1",
+            "section_title": "HNSW 的构造与查询",
+            "page": 17,
+            "path": "CSC5210/L03-近似最近邻.md",
+            "line_start": 2
+          },
+          "text": "HNSW 是分层可导航小世界图，上层稀疏用于快速跳转，下层稠密用于精确收敛。插入时从最高层开始贪心找最近点，再逐层下降并连边；查询也走同样的路径，因此把检索复杂度从线性降到对数级。HNSW 的召回率与延迟由 ef 参数权衡。"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "fdc667e4ac810563",
+          "score": 0.0306,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "前序、中序、后序是深度优先，层序是广度优先。二叉搜索树的中序遍历得到有序序列，这条性质常用来验证一棵树是不是 BST。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 3,
+            "section": "3.3",
+            "section_title": "树的遍历",
+            "page": 23,
+            "path": "CSC3170/L03-树与遍历.md",
+            "line_start": 10
+          },
+          "text": "前序、中序、后序是深度优先，层序是广度优先。二叉搜索树的中序遍历得到有序序列，这条性质常用来验证一棵树是不是 BST。"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "39db91cb4298d798",
+          "score": 0.0295,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.3",
+            "section_title": "可观测性",
+            "page": 55,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 10
+          },
+          "text": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "d8dc1002f7a65a27",
+          "score": 0.028,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "稀疏检索的词表是词项，向量维度等于词表大小，绝大多数位置为 0，所以用倒排索引存。它可解释性强，但换一种说法就可能召回不到。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 2,
+            "section": "2.3",
+            "section_title": "稀疏检索",
+            "page": 15,
+            "path": "CSC5210/L02-向量空间模型.md",
+            "line_start": 10
+          },
+          "text": "稀疏检索的词表是词项，向量维度等于词表大小，绝大多数位置为 0，所以用倒排索引存。它可解释性强，但换一种说法就可能召回不到。"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "3854e7d60efd51a5",
+          "score": 0.0164,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "哈希函数把键映射到桶下标，好的哈希函数要让输出均匀、计算快、对相似输入不聚堆。字符串常用多项式滚动哈希，模数选大质数可以减少碰撞。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 4,
+            "section": "4.1",
+            "section_title": "哈希函数",
+            "page": 25,
+            "path": "CSC3170/L04-哈希表.md",
+            "line_start": 2
+          },
+          "text": "哈希函数把键映射到桶下标，好的哈希函数要让输出均匀、计算快、对相似输入不聚堆。字符串常用多项式滚动哈希，模数选大质数可以减少碰撞。"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "e21d3598f2034a2f",
+          "score": 0.0164,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "GROUP BY 把行按列分组，聚合函数在每组内计算。WHERE 在分组前过滤行，HAVING 在分组后过滤组，这是两者最常考的区别。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 3,
+            "section": "3.2",
+            "section_title": "聚合与分组",
+            "page": 20,
+            "path": "CSC4180/L03-SQL 查询.md",
+            "line_start": 6
+          },
+          "text": "GROUP BY 把行按列分组，聚合函数在每组内计算。WHERE 在分组前过滤行，HAVING 在分组后过滤组，这是两者最常考的区别。"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "dd9b09c0258988bf",
+          "score": 0.0161,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "选择 σ、投影 π、连接 ⋈ 是关系代数的基本运算，SQL 的 WHERE、SELECT、JOIN 分别对应它们。查询优化的本质是在保证等价的前提下重排这些运算。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 1,
+            "section": "1.3",
+            "section_title": "关系代数",
+            "page": 7,
+            "path": "CSC4180/L01-关系模型.md",
+            "line_start": 10
+          },
+          "text": "选择 σ、投影 π、连接 ⋈ 是关系代数的基本运算，SQL 的 WHERE、SELECT、JOIN 分别对应它们。查询优化的本质是在保证等价的前提下重排这些运算。"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "c003f730f4ef95de",
+          "score": 0.0159,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "TF-IDF 用词频乘以逆文档频率衡量词的重要性：在本文档出现多、在语料里出现少的词权重高。它对长文档做了归一化，但解决不了同义词问题。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 2,
+            "section": "2.1",
+            "section_title": "TF-IDF",
+            "page": 9,
+            "path": "CSC5210/L02-向量空间模型.md",
+            "line_start": 2
+          },
+          "text": "TF-IDF 用词频乘以逆文档频率衡量词的重要性：在本文档出现多、在语料里出现少的词权重高。它对长文档做了归一化，但解决不了同义词问题。"
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "query": "MVCC 是怎么实现快照隔离的",
+      "filters": {
+        "course": null,
+        "max_lecture": null
+      },
+      "limit": 8,
+      "elapsed_ms": 94,
+      "channel": "hybrid",
+      "results": [
+        {
+          "rank": 1,
+          "chunk_id": "dcdfab88066bbcd1",
+          "score": 0.0328,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "MVCC 给每行保留多个版本，读操作按事务开始时或语句开始时的快照选择可见版本，因此读写不互相阻塞。快照隔离能避免脏读和不可重复读，但可能出现写偏斜。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 4,
+            "section": "4.2",
+            "section_title": "MVCC 快照隔离",
+            "page": 28,
+            "path": "CSC4180/L04-事务与隔离.md",
+            "line_start": 6
+          },
+          "text": "MVCC 给每行保留多个版本，读操作按事务开始时或语句开始时的快照选择可见版本，因此读写不互相阻塞。快照隔离能避免脏读和不可重复读，但可能出现写偏斜。"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "8a48e4c7730a6c84",
+          "score": 0.031,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "停用词是出现频率极高但没有区分度的词，比如「的」「是」「了」。去掉停用词能缩小索引、加快查询，但短语查询时要保留位置信息。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 6,
+            "section": "6.3",
+            "section_title": "停用词",
+            "page": 47,
+            "path": "CSC5210/L06-中文检索.md",
+            "line_start": 10
+          },
+          "text": "停用词是出现频率极高但没有区分度的词，比如「的」「是」「了」。去掉停用词能缩小索引、加快查询，但短语查询时要保留位置信息。"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "7a02044f05a0703a",
+          "score": 0.0302,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "记忆化搜索是自顶向下的动态规划，用哈希表或数组缓存已经算过的子问题。它写起来接近递归，适合状态稀疏的问题，但要注意递归深度。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 6,
+            "section": "6.2",
+            "section_title": "记忆化搜索",
+            "page": 44,
+            "path": "CSC3170/L06-动态规划.md",
+            "line_start": 6
+          },
+          "text": "记忆化搜索是自顶向下的动态规划，用哈希表或数组缓存已经算过的子问题。它写起来接近递归，适合状态稀疏的问题，但要注意递归深度。"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "39db91cb4298d798",
+          "score": 0.0301,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.3",
+            "section_title": "可观测性",
+            "page": 55,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 10
+          },
+          "text": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "d8dc1002f7a65a27",
+          "score": 0.0288,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "稀疏检索的词表是词项，向量维度等于词表大小，绝大多数位置为 0，所以用倒排索引存。它可解释性强，但换一种说法就可能召回不到。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 2,
+            "section": "2.3",
+            "section_title": "稀疏检索",
+            "page": 15,
+            "path": "CSC5210/L02-向量空间模型.md",
+            "line_start": 10
+          },
+          "text": "稀疏检索的词表是词项，向量维度等于词表大小，绝大多数位置为 0，所以用倒排索引存。它可解释性强，但换一种说法就可能召回不到。"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "a9c55e673fdf6857",
+          "score": 0.0283,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "倒数排名融合 RRF 不直接比较两路分数，而是用 1/(k + rank) 累加。k 通常取 60，它决定排名靠前的优势有多陡；两路结果按融合分从高到低输出。RRF 的好处是不用把向量距离和关键词分数归一化到同一量纲。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 4,
+            "section": "4.1",
+            "section_title": "倒数排名融合 RRF",
+            "page": 25,
+            "path": "CSC5210/L04-混合检索与融合.md",
+            "line_start": 2
+          },
+          "text": "倒数排名融合 RRF 不直接比较两路分数，而是用 1/(k + rank) 累加。k 通常取 60，它决定排名靠前的优势有多陡；两路结果按融合分从高到低输出。RRF 的好处是不用把向量距离和关键词分数归一化到同一量纲。"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "96b291869eec7c9a",
+          "score": 0.0268,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "拓扑排序把有向无环图的顶点排成线性序列，使每条边都从前指向后。Kahn 算法反复取出入度为 0 的点；如果最后还有点没输出，说明图里有环。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 7,
+            "section": "7.3",
+            "section_title": "拓扑排序",
+            "page": 55,
+            "path": "CSC3170/L07-图与最短路.md",
+            "line_start": 10
+          },
+          "text": "拓扑排序把有向无环图的顶点排成线性序列，使每条边都从前指向后。Kahn 算法反复取出入度为 0 的点；如果最后还有点没输出，说明图里有环。"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "941f98a56593e9f5",
+          "score": 0.0259,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "行锁、表锁、间隙锁解决不同的并发问题。两个事务互相等待对方持有的锁就形成死锁，数据库通常用等待图检测并回滚代价较小的事务。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 4,
+            "section": "4.3",
+            "section_title": "锁与死锁",
+            "page": 31,
+            "path": "CSC4180/L04-事务与隔离.md",
+            "line_start": 10
+          },
+          "text": "行锁、表锁、间隙锁解决不同的并发问题。两个事务互相等待对方持有的锁就形成死锁，数据库通常用等待图检测并回滚代价较小的事务。"
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "query": "B+ 树为什么适合做数据库索引",
+      "filters": {
+        "course": null,
+        "max_lecture": null
+      },
+      "limit": 8,
+      "elapsed_ms": 87,
+      "channel": "hybrid",
+      "results": [
+        {
+          "rank": 1,
+          "chunk_id": "3de5fddb489d05eb",
+          "score": 0.0328,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "B+树的所有数据都在叶子节点，内部节点只存键和子指针，因此扇出大、树高低。叶子节点用链表相连，范围扫描只要顺着叶子走，这就是数据库索引偏爱 B+树的原因。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 2,
+            "section": "2.1",
+            "section_title": "B+树",
+            "page": 9,
+            "path": "CSC4180/L02-索引结构.md",
+            "line_start": 2
+          },
+          "text": "B+树的所有数据都在叶子节点，内部节点只存键和子指针，因此扇出大、树高低。叶子节点用链表相连，范围扫描只要顺着叶子走，这就是数据库索引偏爱 B+树的原因。"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "c3553473b043269c",
+          "score": 0.031,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "区分度高的列适合建索引，性别这种只有两三个取值的列收益很低。联合索引遵循最左前缀原则，把等值条件放前面、范围条件放后面。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 2,
+            "section": "2.3",
+            "section_title": "索引选择",
+            "page": 15,
+            "path": "CSC4180/L02-索引结构.md",
+            "line_start": 10
+          },
+          "text": "区分度高的列适合建索引，性别这种只有两三个取值的列收益很低。联合索引遵循最左前缀原则，把等值条件放前面、范围条件放后面。"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "fdc667e4ac810563",
+          "score": 0.0306,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "前序、中序、后序是深度优先，层序是广度优先。二叉搜索树的中序遍历得到有序序列，这条性质常用来验证一棵树是不是 BST。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 3,
+            "section": "3.3",
+            "section_title": "树的遍历",
+            "page": 23,
+            "path": "CSC3170/L03-树与遍历.md",
+            "line_start": 10
+          },
+          "text": "前序、中序、后序是深度优先，层序是广度优先。二叉搜索树的中序遍历得到有序序列，这条性质常用来验证一棵树是不是 BST。"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "289191a9175d1135",
+          "score": 0.0282,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "中文没有空格，全文索引要么用分词器切成词，要么用 ngram 切成固定长度的字片段。ngram 召回高但索引大，分词准但依赖词典。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 6,
+            "section": "6.1",
+            "section_title": "分词与 ngram",
+            "page": 41,
+            "path": "CSC5210/L06-中文检索.md",
+            "line_start": 2
+          },
+          "text": "中文没有空格，全文索引要么用分词器切成词，要么用 ngram 切成固定长度的字片段。ngram 召回高但索引大，分词准但依赖词典。"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "7f8b60164149c89e",
+          "score": 0.0161,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "聚簇索引的叶子存整行数据，一张表只能有一个；二级索引的叶子存主键，查非索引列要回表。覆盖索引把需要的列都放进索引，可以避免回表。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 2,
+            "section": "2.2",
+            "section_title": "聚簇索引与二级索引",
+            "page": 12,
+            "path": "CSC4180/L02-索引结构.md",
+            "line_start": 6
+          },
+          "text": "聚簇索引的叶子存整行数据，一张表只能有一个；二级索引的叶子存主键，查非索引列要回表。覆盖索引把需要的列都放进索引，可以避免回表。"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "60dd4ff8bc492371",
+          "score": 0.0159,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "二叉搜索树保证左子树键小于根、右子树键大于根，查找平均 O(log n)。如果按有序序列插入，树会退化成链表，查找变成 O(n)，所以需要平衡机制。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 3,
+            "section": "3.1",
+            "section_title": "二叉搜索树",
+            "page": 17,
+            "path": "CSC3170/L03-树与遍历.md",
+            "line_start": 2
+          },
+          "text": "二叉搜索树保证左子树键小于根、右子树键大于根，查找平均 O(log n)。如果按有序序列插入，树会退化成链表，查找变成 O(n)，所以需要平衡机制。"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "ed23b561686c3f67",
+          "score": 0.0156,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "AVL 树要求任一节点左右子树高度差不超过 1，插入或删除后通过单旋、双旋恢复平衡。它的查找最坏 O(log n)，代价是旋转次数比红黑树多。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 3,
+            "section": "3.2",
+            "section_title": "平衡树 AVL",
+            "page": 20,
+            "path": "CSC3170/L03-树与遍历.md",
+            "line_start": 6
+          },
+          "text": "AVL 树要求任一节点左右子树高度差不超过 1，插入或删除后通过单旋、双旋恢复平衡。它的查找最坏 O(log n)，代价是旋转次数比红黑树多。"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "23bae4ae906a1da3",
+          "score": 0.0156,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "分片把一张表按分片键拆到多个节点，扩容时可能需要重新分片。分片键选得好，查询能落在单个分片；选得不好，每次都要跨分片聚合。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 7,
+            "section": "7.1",
+            "section_title": "分片",
+            "page": 49,
+            "path": "CSC4180/L07-分布式数据库.md",
+            "line_start": 2
+          },
+          "text": "分片把一张表按分片键拆到多个节点，扩容时可能需要重新分片。分片键选得好，查询能落在单个分片；选得不好，每次都要跨分片聚合。"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "query": "动态规划的状态转移怎么确定",
+      "filters": {
+        "course": null,
+        "max_lecture": null
+      },
+      "limit": 8,
+      "elapsed_ms": 103,
+      "channel": "hybrid",
+      "results": [
+        {
+          "rank": 1,
+          "chunk_id": "af8487d0e1b820e5",
+          "score": 0.0325,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "动态规划先定义状态，再写状态转移方程，最后确定边界和计算顺序。状态要满足无后效性：当前状态确定后，未来只依赖它，不依赖到达它的路径。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 6,
+            "section": "6.1",
+            "section_title": "状态与转移",
+            "page": 41,
+            "path": "CSC3170/L06-动态规划.md",
+            "line_start": 2
+          },
+          "text": "动态规划先定义状态，再写状态转移方程，最后确定边界和计算顺序。状态要满足无后效性：当前状态确定后，未来只依赖它，不依赖到达它的路径。"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "f1356b15ed8f127f",
+          "score": 0.0313,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "写入后索引通常不是立即可见，需要 refresh 把内存中的段刷成可搜索状态。refresh 太频繁会产生很多小段，拖慢查询，所以要在可见性和合并开销之间取平衡。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.1",
+            "section_title": "索引刷新",
+            "page": 49,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 2
+          },
+          "text": "写入后索引通常不是立即可见，需要 refresh 把内存中的段刷成可搜索状态。refresh 太频繁会产生很多小段，拖慢查询，所以要在可见性和合并开销之间取平衡。"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "39db91cb4298d798",
+          "score": 0.0306,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.3",
+            "section_title": "可观测性",
+            "page": 55,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 10
+          },
+          "text": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "7a02044f05a0703a",
+          "score": 0.0304,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "记忆化搜索是自顶向下的动态规划，用哈希表或数组缓存已经算过的子问题。它写起来接近递归，适合状态稀疏的问题，但要注意递归深度。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 6,
+            "section": "6.2",
+            "section_title": "记忆化搜索",
+            "page": 44,
+            "path": "CSC3170/L06-动态规划.md",
+            "line_start": 6
+          },
+          "text": "记忆化搜索是自顶向下的动态规划，用哈希表或数组缓存已经算过的子问题。它写起来接近递归，适合状态稀疏的问题，但要注意递归深度。"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "8a48e4c7730a6c84",
+          "score": 0.0294,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "停用词是出现频率极高但没有区分度的词，比如「的」「是」「了」。去掉停用词能缩小索引、加快查询，但短语查询时要保留位置信息。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 6,
+            "section": "6.3",
+            "section_title": "停用词",
+            "page": 47,
+            "path": "CSC5210/L06-中文检索.md",
+            "line_start": 10
+          },
+          "text": "停用词是出现频率极高但没有区分度的词，比如「的」「是」「了」。去掉停用词能缩小索引、加快查询，但短语查询时要保留位置信息。"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "3a1b44da648529df",
+          "score": 0.027,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "稳定排序保持相等元素的相对顺序，归并、插入、冒泡稳定，快排、堆排不稳定。实际选型还要看数据规模、是否近乎有序、以及是否允许额外空间。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 8,
+            "section": "8.3",
+            "section_title": "稳定性与复杂度",
+            "page": 63,
+            "path": "CSC3170/L08-排序算法.md",
+            "line_start": 10
+          },
+          "text": "稳定排序保持相等元素的相对顺序，归并、插入、冒泡稳定，快排、堆排不稳定。实际选型还要看数据规模、是否近乎有序、以及是否允许额外空间。"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "96b291869eec7c9a",
+          "score": 0.0267,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "拓扑排序把有向无环图的顶点排成线性序列，使每条边都从前指向后。Kahn 算法反复取出入度为 0 的点；如果最后还有点没输出，说明图里有环。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 7,
+            "section": "7.3",
+            "section_title": "拓扑排序",
+            "page": 55,
+            "path": "CSC3170/L07-图与最短路.md",
+            "line_start": 10
+          },
+          "text": "拓扑排序把有向无环图的顶点排成线性序列，使每条边都从前指向后。Kahn 算法反复取出入度为 0 的点；如果最后还有点没输出，说明图里有环。"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "289191a9175d1135",
+          "score": 0.0266,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "中文没有空格，全文索引要么用分词器切成词，要么用 ngram 切成固定长度的字片段。ngram 召回高但索引大，分词准但依赖词典。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 6,
+            "section": "6.1",
+            "section_title": "分词与 ngram",
+            "page": 41,
+            "path": "CSC5210/L06-中文检索.md",
+            "line_start": 2
+          },
+          "text": "中文没有空格，全文索引要么用分词器切成词，要么用 ngram 切成固定长度的字片段。ngram 召回高但索引大，分词准但依赖词典。"
+        }
+      ]
+    },
+    {
+      "id": "q5",
+      "query": "RRF 的 k 取多少",
+      "filters": {
+        "course": null,
+        "max_lecture": null
+      },
+      "limit": 8,
+      "elapsed_ms": 85,
+      "channel": "hybrid",
+      "results": [
+        {
+          "rank": 1,
+          "chunk_id": "a9c55e673fdf6857",
+          "score": 0.0328,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "倒数排名融合 RRF 不直接比较两路分数，而是用 1/(k + rank) 累加。k 通常取 60，它决定排名靠前的优势有多陡；两路结果按融合分从高到低输出。RRF 的好处是不用把向量距离和关键词分数归一化到同一量纲。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 4,
+            "section": "4.1",
+            "section_title": "倒数排名融合 RRF",
+            "page": 25,
+            "path": "CSC5210/L04-混合检索与融合.md",
+            "line_start": 2
+          },
+          "text": "倒数排名融合 RRF 不直接比较两路分数，而是用 1/(k + rank) 累加。k 通常取 60，它决定排名靠前的优势有多陡；两路结果按融合分从高到低输出。RRF 的好处是不用把向量距离和关键词分数归一化到同一量纲。"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "b0c2f7b124c1b26b",
+          "score": 0.0315,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "加权求和先分别归一化两路分数，再按权重相加。权重要在验证集上调，换一个语料就可能失效，所以工程上 RRF 更省心。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 4,
+            "section": "4.2",
+            "section_title": "加权求和",
+            "page": 28,
+            "path": "CSC5210/L04-混合检索与融合.md",
+            "line_start": 6
+          },
+          "text": "加权求和先分别归一化两路分数，再按权重相加。权重要在验证集上调，换一个语料就可能失效，所以工程上 RRF 更省心。"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "7a02044f05a0703a",
+          "score": 0.0302,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "记忆化搜索是自顶向下的动态规划，用哈希表或数组缓存已经算过的子问题。它写起来接近递归，适合状态稀疏的问题，但要注意递归深度。",
+          "citation": {
+            "course": "CSC3170",
+            "course_name": "数据结构与算法",
+            "lecture": 6,
+            "section": "6.2",
+            "section_title": "记忆化搜索",
+            "page": 44,
+            "path": "CSC3170/L06-动态规划.md",
+            "line_start": 6
+          },
+          "text": "记忆化搜索是自顶向下的动态规划，用哈希表或数组缓存已经算过的子问题。它写起来接近递归，适合状态稀疏的问题，但要注意递归深度。"
+        },
+        {
+          "rank": 4,
+          "chunk_id": "f1356b15ed8f127f",
+          "score": 0.0296,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "写入后索引通常不是立即可见，需要 refresh 把内存中的段刷成可搜索状态。refresh 太频繁会产生很多小段，拖慢查询，所以要在可见性和合并开销之间取平衡。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.1",
+            "section_title": "索引刷新",
+            "page": 49,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 2
+          },
+          "text": "写入后索引通常不是立即可见，需要 refresh 把内存中的段刷成可搜索状态。refresh 太频繁会产生很多小段，拖慢查询，所以要在可见性和合并开销之间取平衡。"
+        },
+        {
+          "rank": 5,
+          "chunk_id": "39db91cb4298d798",
+          "score": 0.029,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.3",
+            "section_title": "可观测性",
+            "page": 55,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 10
+          },
+          "text": "检索服务要记录每条查询的耗时、命中数、走的是全文臂还是向量臂、以及召回了哪些文档。没有这些日志，线上效果变差时无法定位是索引、模型还是参数的问题。"
+        },
+        {
+          "rank": 6,
+          "chunk_id": "8a48e4c7730a6c84",
+          "score": 0.0284,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "停用词是出现频率极高但没有区分度的词，比如「的」「是」「了」。去掉停用词能缩小索引、加快查询，但短语查询时要保留位置信息。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 6,
+            "section": "6.3",
+            "section_title": "停用词",
+            "page": 47,
+            "path": "CSC5210/L06-中文检索.md",
+            "line_start": 10
+          },
+          "text": "停用词是出现频率极高但没有区分度的词，比如「的」「是」「了」。去掉停用词能缩小索引、加快查询，但短语查询时要保留位置信息。"
+        },
+        {
+          "rank": 7,
+          "chunk_id": "941f98a56593e9f5",
+          "score": 0.0282,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "行锁、表锁、间隙锁解决不同的并发问题。两个事务互相等待对方持有的锁就形成死锁，数据库通常用等待图检测并回滚代价较小的事务。",
+          "citation": {
+            "course": "CSC4180",
+            "course_name": "数据库系统",
+            "lecture": 4,
+            "section": "4.3",
+            "section_title": "锁与死锁",
+            "page": 31,
+            "path": "CSC4180/L04-事务与隔离.md",
+            "line_start": 10
+          },
+          "text": "行锁、表锁、间隙锁解决不同的并发问题。两个事务互相等待对方持有的锁就形成死锁，数据库通常用等待图检测并回滚代价较小的事务。"
+        },
+        {
+          "rank": 8,
+          "chunk_id": "70696d11c006050c",
+          "score": 0.0276,
+          "channels": [
+            "hybrid"
+          ],
+          "snippet": "检索系统的缓存分三层：查询结果缓存、倒排表缓存、向量距离缓存。查询结果缓存命中率低时，缓存候选集往往更划算。",
+          "citation": {
+            "course": "CSC5210",
+            "course_name": "信息检索",
+            "lecture": 7,
+            "section": "7.2",
+            "section_title": "缓存",
+            "page": 52,
+            "path": "CSC5210/L07-检索系统实践.md",
+            "line_start": 6
+          },
+          "text": "检索系统的缓存分三层：查询结果缓存、倒排表缓存、向量距离缓存。查询结果缓存命中率低时，缓存候选集往往更划算。"
+        }
+      ]
+    }
+  ]
+}

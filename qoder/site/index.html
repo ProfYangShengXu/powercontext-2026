@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>课引 CourseCite · 课程资料混合检索</title>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+<script>window.COURSECITE_SNAPSHOT = "data/snapshots.json";</script>
+<header class="top">
+  <div class="wrap">
+    <h1>课引 <span>CourseCite</span></h1>
+    <p class="tagline">一句话问课程资料，返回原文段落 + 可核对的出处（课程 / 讲次 / 小节 / 页码）。</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="searchbox">
+    <form id="search-form">
+      <input id="q" name="q" type="text" autocomplete="off"
+             placeholder="例如：上次讲 HNSW 是在第几讲？" aria-label="检索问题" />
+      <button type="submit">检索</button>
+    </form>
+    <div class="filters">
+      <label>课程
+        <select id="course">
+          <option value="">全部</option>
+          <option value="CSC3170">CSC3170 数据结构与算法</option>
+          <option value="CSC4180">CSC4180 数据库系统</option>
+          <option value="CSC5210">CSC5210 信息检索</option>
+        </select>
+      </label>
+      <label>讲次 ≤
+        <input id="lecture-max" type="number" min="0" max="99" placeholder="不限" />
+      </label>
+      <span id="mode-badge" class="badge">加载中…</span>
+    </div>
+    <div id="suggestions" class="chips"></div>
+  </section>
+
+  <section id="status" class="status" hidden></section>
+  <section id="results" class="results"></section>
+
+  <section class="logbox">
+    <h2>检索留痕 <small>（LiveStore 写入 seekdb 的 retrieval_log；快照模式为本次页面内记录）</small></h2>
+    <div id="log" class="log">暂无记录。</div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>在线体验为预生成快照回放；真实自由检索请在本地按 README 运行 LiveStore。</p>
+</footer>
+
+<script src="static/app.js"></script>
+</body>
+</html>
