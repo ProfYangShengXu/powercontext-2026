@@ -38,7 +38,7 @@
 ### 1.2 真实标注集
 
 - `tools/pdf_recall_eval/real_questions.jsonl`：公开工作量里的 5 条 FinanceBench 原题；页码由上游 `evidence_page_num`（0-based）+1 得到。
-- 额外 24 条：AMD / American Express / Boeing / 3M 的公开题，同样取上游页码。这 4 份 PDF 只在开发时下载到仓库外（`/mnt/d/pc-work/.pdf_recall_eval/pdfs`），**不入库**。它们不是隐藏集的 5 份文档（隐藏集具体是哪 5 份未知），只作为跨文档泛化验证。
+- 额外 24 条：AMD / American Express / Boeing / 3M 的公开题，同样取上游页码。这 4 份 PDF 只在开发时下载到仓库外的临时目录，**不入库**（可用 `evaluate.py --pdf` 指向任意 FinanceBench 原件复现）。它们不是隐藏集的 5 份文档（隐藏集具体是哪 5 份未知），只作为跨文档泛化验证。
 
 ### 1.3 explain 探针
 
@@ -77,7 +77,7 @@
 
 ## 3. ② 消融表（最终代码上逐项关闭）
 
-命令：`/mnt/d/pc-work/.pdf_recall_eval/run_multi.sh`（29 题 / 5 文档）。
+方法：对 5 份 PDF 各跑一次 `evaluate.py --pdf <file> --document-id <doc> --dataset <24 条真实题>`，再按题数加权汇总（29 题 / 5 文档）。
 
 | 变体 | Recall@20 | Recall@5 | MRR | 结论 |
 |---|---|---|---|---|
