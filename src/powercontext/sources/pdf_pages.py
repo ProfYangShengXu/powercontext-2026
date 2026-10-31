@@ -356,6 +356,13 @@ async def search_pdf_pages(
             search_ranked,
             max(limit, _RERANK_DEPTH),
             index.section_ranked(question),
+            # Independent priors, never multipliers: a value question gets the
+            # numeric-density arm, an applicability question gets the business
+            # overview arm; both stay out of the way of every other question.
+            (
+                (index.numeric_ranked(question), _NUMERIC_WEIGHT),
+                (index.overview_ranked(question), _OVERVIEW_WEIGHT),
+            ),
         )
         # Recall@20 is a membership gate: promoting pages from 21-50 into the
         # returned set was measured to lose gold pages, so the reranker only
@@ -452,8 +459,14 @@ def _fuse(
     searched: list[MemoryCitation],
     limit: int,
     sections: Sequence[MemoryCitation] = (),
+    extra_arms: Sequence[tuple[Sequence[MemoryCitation], float]] = (),
 ) -> list[MemoryCitation]:
-    """Fuse the offline page ranking, public search and section arm (RRF)."""
+    """Fuse the offline page ranking, public search and section arm (RRF).
+
+    ``extra_arms`` are independent priors (numeric density, business overview).
+    Each is fused as its own ranked list, never as a multiplier, so an arm can
+    promote a page but can never zero out the lexical ranking.
+    """
 
     combined: dict[tuple[str, str, str, str], float] = {}
     citations: dict[tuple[str, str, str, str], MemoryCitation] = {}
@@ -476,6 +489,9 @@ def _fuse(
     add(searched)
     if sections:
         add(sections, _SECTION_WEIGHT)
+    for items, weight in extra_arms:
+        if items:
+            add(items, weight)
     selected = sorted(combined, key=lambda key: (-combined[key], key))[:limit]
     return [citations[key] for key in selected]
 
@@ -556,6 +572,19 @@ _METRIC_EXPANSIONS: tuple[tuple[re.Pattern[str], tuple[str, ...]], ...] = (
 )
 _EXPANSION_WEIGHT = 0.5
 
+# "What is / how much / percent" questions are answered by a number, and a
+# statement table is mostly numbers while narrative prose is mostly words.  The
+# trigger stays narrow: "what are the geographies" is a list question, not a
+# value question, and must not pull table pages into the pool.
+_NUMERIC_QUESTION = re.compile(
+    r"\bwhat\s+(?:is|was)\b|\bhow\s+(?:much|many)\b|\bpercent(?:age)?\b",
+    re.IGNORECASE,
+)
+# "If X is not a relevant metric for a company like this, explain why" is answered
+# from the company description, not from a statement that may not contain the
+# metric at all.  This cue is the applicability question shape, not an answer.
+_APPLICABILITY_QUESTION = re.compile(r"relevant\s+metric", re.IGNORECASE)
+
 
 def _metric_expansion_terms(question: str) -> tuple[str, ...]:
     """Return the statement line-item vocabulary for a calculated metric."""
@@ -632,6 +661,11 @@ def _page_sections(raw_tokens: Sequence[str], expanded_tokens: Sequence[str]) ->
         sections.add("business")
     if "accounting" in head and ("polic" in terms or "pronouncement" in terms):
         sections.add("accounting")
+    if "overview" in set(raw_tokens[:8]) and not (raw_tokens and raw_tokens[0].isdigit()):
+        # "Item 1. Business / Overview" opens the company description.  A table of
+        # contents also lists those words, but it starts with a page number, so
+        # the token guard keeps the running TOC page out of the overview arm.
+        sections.add("overview")
     return frozenset(sections)
 
 
@@ -677,6 +711,7 @@ class _PageIndex:
         "passages",
         "page_terms",
         "sections",
+        "numeric_density",
         "bigrams",
         "trigrams",
         "positions",
@@ -691,12 +726,18 @@ class _PageIndex:
         passages: list[list[list[str]]],
         page_terms: list[set[str]],
         sections: list[frozenset[str]],
+        numeric_density: Sequence[float] | None = None,
     ) -> None:
         self.entries = entries
         self.tokens = tokens
         self.passages = passages
         self.page_terms = page_terms
         self.sections = sections
+        if numeric_density is None:
+            numeric_density = [
+                _numeric_density(getattr(getattr(record, "entry", None), "text", "")) for record in entries
+            ]
+        self.numeric_density = list(numeric_density)
         self.bigrams = [frozenset(zip(page, page[1:])) for page in tokens]
         self.trigrams = [frozenset(zip(page, page[1:], page[2:])) for page in tokens]
         self.positions = {}
@@ -839,6 +880,37 @@ class _PageIndex:
                     ordered.append(arm[offset])
         return [self.entries[index].citation for index in ordered]
 
+    def numeric_ranked(self, question: str) -> list[MemoryCitation]:
+        """Dense-numeric pages as an independent arm for value questions.
+
+        A statement table is mostly numbers while narrative prose is mostly
+        words, so density is a cheap table-likelihood prior.  The arm is only
+        built when the question asks for a value, and it is a short list of the
+        densest pages rather than a permutation of the whole document.
+        """
+
+        if not _NUMERIC_QUESTION.search(question):
+            return []
+        order = sorted(range(len(self.entries)), key=lambda index: (-self.numeric_density[index], index))
+        return [self.entries[index].citation for index in order[:_NUMERIC_ARM_DEPTH]]
+
+    def overview_ranked(self, question: str) -> list[MemoryCitation]:
+        """Business-overview pages as an arm for metric-applicability questions.
+
+        "If X is not a relevant metric for a company like this, explain why" is
+        answered from the company description, not from a statement that may not
+        contain the metric at all.  Only that question shape opens the arm, and
+        pages keep document order so the opening "Item 1. Business" page leads.
+        """
+
+        if not _APPLICABILITY_QUESTION.search(question):
+            return []
+        return [
+            self.entries[index].citation
+            for index in range(len(self.entries))
+            if "overview" in self.sections[index]
+        ]
+
     def rank(self, question: str) -> list[tuple[float, int]]:
         plan = self.plan(question)
         count = len(self.entries)
@@ -932,6 +1004,20 @@ _RERANK_DEPTH = 50
 # the non-section questions.
 _SECTION_WEIGHT = 3.0
 
+# Numeric density is a weak, table-shaped prior.  It is fused below one full
+# lexical list and over a short shortlist: measured on the dev docs, a full-weight
+# full-document permutation displaced a low-density note page (PepsiCo p78) out of
+# the top 20, while this setting is a tie-breaker that promotes dense statement
+# tables without crowding out a genuine lexical hit.
+_NUMERIC_WEIGHT = 0.5
+# Only the densest pages join the arm; past this depth the pages carry almost no
+# numbers and would only add noise.
+_NUMERIC_ARM_DEPTH = 20
+# An applicability question is answered by the company description; the arm
+# outweighs the (large) statement section so the overview page is not crowded
+# out by every income-statement page of a bank filing.
+_OVERVIEW_WEIGHT = 2.0
+
 
 def _select_reranker() -> PDFPageReranker:
     """Choose the reranker.  Only the offline lexical one is bundled today."""
@@ -989,11 +1075,25 @@ def _index_cache_key(memory_ref: Any, entries: list[Any]) -> tuple[Any, ...]:
     return (ref_key, len(entries), fingerprint.hexdigest())
 
 
+def _numeric_density(text: str) -> float:
+    """Share of a page's tokens that are bare numbers.
+
+    Statement tables are mostly numbers; narrative prose is mostly words.  The
+    ratio is a cheap, model-free table-likelihood prior.
+    """
+
+    tokens = _TOKEN.findall(unicodedata.normalize("NFC", text).casefold())
+    if not tokens:
+        return 0.0
+    return sum(1 for token in tokens if token.isdigit()) / len(tokens)
+
+
 def _build_index(entries: list[Any]) -> _PageIndex:
     tokens: list[list[str]] = []
     passages: list[list[list[str]]] = []
     page_terms: list[set[str]] = []
     sections: list[frozenset[str]] = []
+    numeric_density: list[float] = []
     for record in entries:
         raw = _rank_tokens(record.entry.text)
         expanded = _index_tokens(record.entry.text)
@@ -1001,7 +1101,8 @@ def _build_index(entries: list[Any]) -> _PageIndex:
         page_terms.append(set(expanded))
         passages.append(_split_passages(expanded))
         sections.append(_page_sections(raw, expanded))
-    return _PageIndex(entries, tokens, passages, page_terms, sections)
+        numeric_density.append(_numeric_density(record.entry.text))
+    return _PageIndex(entries, tokens, passages, page_terms, sections, numeric_density)
 
 
 def _split_passages(tokens: list[str]) -> list[list[str]]:
