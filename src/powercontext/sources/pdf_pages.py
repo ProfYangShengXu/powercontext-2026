@@ -64,6 +64,9 @@ _TOKEN = re.compile(r"[a-z]+|\d+")
 # Document identities are split into alphanumeric runs so an abbreviation with a
 # digit (``3M_2022_10K`` -> ``3m``) stays one token and still matches the question.
 _DOCUMENT_TOKEN = re.compile(r"[a-z0-9]+")
+# ``pdf_page_source_id`` encodes the document digest, the whole-file digest and the
+# physical page number, so retrieval can collapse revisions of the same page.
+_PDF_PAGE_SOURCE_ID = re.compile(r"^pdf-page:([0-9a-f]{32}):([0-9a-f]{64}):([1-9][0-9]*)$")
 
 # Query-side vocabulary that carries no discriminating evidence in financial
 # filings: English function words, question scaffolding, and the boilerplate that
@@ -255,15 +258,12 @@ def pdf_page_source_id(document_id: str, document_sha256: str, page_number: int,
         raise ValueError("document_sha256 must be 64 lowercase hexadecimal characters")  # noqa: TRY003
     if type(page_number) is not int or page_number < 1:
         raise ValueError("page_number must be a positive integer")  # noqa: TRY003
-    material = (
-        b"powercontext.pdf-page.v1\x00"
-        + document_id.encode("utf-8")
-        + b"\x00"
-        + document_sha256.encode("ascii")
-        + b"\x00"
-        + str(page_number).encode("ascii")
-    )
-    return f"pdf-page:{hashlib.sha256(material).hexdigest()}"
+    material = b"powercontext.pdf-page.document.v1\x00" + document_id.encode("utf-8")
+    document_digest = hashlib.sha256(material).hexdigest()[:32]
+    # Encode the digest and the physical page number so a reader of the Source
+    # reference can tell which page it is; the whole triple still determines the
+    # identity and the string stays far below MAX_SOURCE_ID_LENGTH.
+    return f"pdf-page:{document_digest}:{document_sha256}:{page_number}"
 
 
 def parse_pdf_document(value: PDFDocumentInput, /) -> tuple[PDFPageInput, ...]:
@@ -351,6 +351,7 @@ async def search_pdf_pages(
 
     memory_ref, entries = await _list_entries(memory)
     if entries:
+        entries = _newest_pages(entries)
         index = _cached_index(memory_ref, entries)
         allowed = index.document_positions(question)
         ranked = [
@@ -358,7 +359,11 @@ async def search_pdf_pages(
             for _score, position in index.rank(question)
             if allowed is None or position in allowed
         ]
-        search_ranked = await _search_stage(memory, question, limit)
+        search_ranked = [
+            citation
+            for citation in await _search_stage(memory, question, limit)
+            if index.position_of(citation) is not None
+        ]
         fused = _fuse(
             ranked,
             _within(index, allowed, search_ranked),
@@ -1140,6 +1145,50 @@ def _numeric_density(text: str) -> float:
     if not tokens:
         return 0.0
     return sum(1 for token in tokens if token.isdigit()) / len(tokens)
+
+
+def _page_identity_of(source: object) -> tuple[str, int] | None:
+    """Return ``(document digest, page number)`` encoded by one Source reference."""
+
+    if getattr(source, "source_type", None) != PDF_PAGE_SOURCE_NAME:
+        return None
+    match = _PDF_PAGE_SOURCE_ID.fullmatch(getattr(source, "source_id", ""))
+    if match is None:
+        return None
+    return match.group(1), int(match.group(3))
+
+
+def _record_page_identity(record: Any) -> tuple[str, int] | None:
+    for source in getattr(getattr(record, "entry", None), "sources", ()):
+        identity = _page_identity_of(source)
+        if identity is not None:
+            return identity
+    return None
+
+
+def _newest_pages(entries: list[Any]) -> list[Any]:
+    """Collapse several revisions of one physical page to the newest entry.
+
+    Retrieval counts a page by document and physical page number.  A revised PDF
+    adds fresh Source identities for the same pages, so a scope that holds two
+    revisions would otherwise return one page twice and mix the document digests.
+    Entries that carry no PDF page identity are kept untouched.
+    """
+
+    chosen: dict[tuple[str, int], tuple[tuple[int, int], Any]] = {}
+    for position, record in enumerate(entries):
+        identity = _record_page_identity(record)
+        if identity is None:
+            continue
+        revision = getattr(getattr(record, "entry", None), "created_in_revision", 0)
+        key = (revision if isinstance(revision, int) else 0, position)
+        current = chosen.get(identity)
+        if current is None or key >= current[0]:
+            chosen[identity] = (key, record)
+    if not chosen:
+        return entries
+    keep = {id(record) for _key, record in chosen.values()}
+    return [record for record in entries if id(record) in keep or _record_page_identity(record) is None]
 
 
 def _document_id_of_entry(record: Any) -> str:

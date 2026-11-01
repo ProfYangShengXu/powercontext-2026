@@ -228,3 +228,35 @@ def test_document_positions_keeps_digit_abbreviations_whole() -> None:
     ]
     index = _build_index(records)
     assert index.document_positions("What was 3M's operating margin in FY2022?") == frozenset({0})
+
+
+def test_page_source_id_encodes_the_physical_page() -> None:
+    from types import SimpleNamespace
+
+    from powercontext.sources.pdf_pages import _page_identity_of, pdf_page_source_id
+
+    name = pdf_page_source_id("doc", "a" * 64, 7)
+    assert len(name) <= 256
+    reference = SimpleNamespace(source_type="pdf-page", source_id=name)
+    identity = _page_identity_of(reference)
+    assert identity is not None and identity[1] == 7
+    assert _page_identity_of(SimpleNamespace(source_type="other", source_id=name)) is None
+
+
+def test_newest_pages_collapses_two_revisions_of_one_page() -> None:
+    from types import SimpleNamespace
+
+    from powercontext.sources.pdf_pages import _newest_pages, pdf_page_source_id
+
+    def _record(source_id: str, revision: int):
+        source = SimpleNamespace(source_type="pdf-page", source_id=source_id)
+        return SimpleNamespace(
+            entry=SimpleNamespace(sources=(source,), created_in_revision=revision)
+        )
+
+    old = _record(pdf_page_source_id("doc", "a" * 64, 1), 1)
+    new = _record(pdf_page_source_id("doc", "b" * 64, 1), 2)
+    other_page = _record(pdf_page_source_id("doc", "b" * 64, 2), 2)
+    kept = _newest_pages([old, new, other_page])
+    assert len(kept) == 2
+    assert new in kept and other_page in kept and old not in kept
