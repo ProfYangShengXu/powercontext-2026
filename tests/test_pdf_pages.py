@@ -217,3 +217,14 @@ def test_document_positions_are_inert_for_one_document() -> None:
         _TextRecord("a2", "ALPHA_2022_10K\nwidget revenue 43"),
     ]
     assert _build_index(records).document_positions("What does ALPHA report?") is None
+
+
+def test_document_positions_keeps_digit_abbreviations_whole() -> None:
+    from powercontext.sources.pdf_pages import _build_index
+
+    records = [
+        _TextRecord("m1", "3M_2022_10K\noperating margin 20"),
+        _TextRecord("a1", "AMD_2022_10K\noperating margin 20"),
+    ]
+    index = _build_index(records)
+    assert index.document_positions("What was 3M's operating margin in FY2022?") == frozenset({0})
