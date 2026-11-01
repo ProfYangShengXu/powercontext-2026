@@ -145,6 +145,10 @@ cp .env.example .env
 至少改这几项：
 
 ```dotenv
+# 0) 必填：Dify 自身的密钥与初始管理员密码
+SECRET_KEY=<openssl rand -base64 42>
+INIT_PASSWORD=<你给初始管理员设的密码>
+
 # 1) 必填：1.18 的 agent_backend / local_sandbox 启动令牌（openssl rand -base64 32）
 DIFY_AGENT_LOCAL_SANDBOX_AUTH_TOKEN=<随机串>
 
