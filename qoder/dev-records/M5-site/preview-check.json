@@ -1,56 +1,51 @@
 {
   "url": "http://127.0.0.1:8010/",
-  "checked_at": "2026-10-31",
+  "checked_at": "2026-11-01",
+  "direction": "奶油手账 · 抹茶团子（简约克制 · 奶油风 · 可爱清新，视觉为主，文案精简）",
   "checks": {
     "desktop": {
-      "viewport": [
-        1440,
-        900
-      ],
+      "viewport": [1440, 900],
       "clientWidth": 1440,
       "scrollWidth": 1440,
       "horizontalOverflow": false,
-      "pageHeight": 4694,
+      "pageHeight": 3891,
       "h1": 1,
       "h2": 6,
       "images": [
-        [
-          "./assets/app-ui.png",
-          2560,
-          1440
-        ]
+        ["./assets/app-ui.png", 2880, 1800]
       ],
-      "imageLoading": "eager",
-      "anchors": 18,
+      "imageLoading": "auto",
+      "anchors": 20,
       "emptyHrefs": 0,
       "missingAnchors": [],
       "consoleErrors": 0,
       "brokenImages": 0
     },
     "mobile": {
-      "viewport": [
-        390,
-        844
-      ],
+      "viewport": [390, 844],
       "clientWidth": 390,
       "scrollWidth": 390,
       "horizontalOverflow": false,
-      "pageHeight": 6217,
+      "pageHeight": 5073,
       "h1": 1,
       "h2": 6,
       "images": [
-        [
-          "./assets/app-ui.png",
-          2560,
-          1440
-        ]
+        ["./assets/app-ui.png", 2880, 1800]
       ],
-      "imageLoading": "eager",
-      "anchors": 18,
+      "imageLoading": "auto",
+      "anchors": 20,
       "emptyHrefs": 0,
       "missingAnchors": [],
       "consoleErrors": 0,
       "brokenImages": 0
     }
+  },
+  "app": {
+    "viewport": [1440, 900],
+    "consoleErrors": 0,
+    "horizontalOverflow": false,
+    "brokenImages": 0,
+    "verification": "S1-S5 连跑 3 次，均 5 PASS / 0 FAIL",
+    "screenshot": "app-ui.png (2880x1800, 2x)"
   }
 }

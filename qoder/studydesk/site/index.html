@@ -7,10 +7,10 @@
   <meta name="description" content="拾遗：本地学习资料库 + 个性化复习助手。seekdb 负责混合检索，PowerContext 负责跨会话记忆。">
   <meta name="color-scheme" content="light">
   <meta property="og:title" content="拾遗 · 学习资料库与复习助手">
-  <meta property="og:description" content="seekdb 做混合检索，PowerContext 记薄弱点。问一句找回原文与出处，标记一次跨会话复习。">
+  <meta property="og:description" content="问一句，找回原文与出处；标记一次，薄弱点跨会话留下。seekdb 做混合检索，PowerContext 记复习状态。">
   <meta property="og:type" content="website">
-  <meta name="theme-color" content="#8f3425">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%238f3425'/%3E%3Ctext x='32' y='45' font-size='38' font-family='serif' fill='%23fbf3e8' text-anchor='middle'%3E%E6%8B%BE%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#faf6ee">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='32' cy='38' rx='24' ry='21' fill='%23fff6e6' stroke='%23ebd9bc' stroke-width='2'/%3E%3Cpath d='M32 20 C32 15 32 12 32 9' stroke='%235e8c61' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M32 14 C25 13 21 7 23 2 C31 4 34 10 32 14Z' fill='%237fa87a'/%3E%3Ccircle cx='25' cy='36' r='2.4' fill='%234a3f33'/%3E%3Ccircle cx='39' cy='36' r='2.4' fill='%234a3f33'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -19,11 +19,20 @@
   <header class="topbar">
     <div class="shell topbar-inner">
       <a class="brand" href="#top" aria-label="拾遗首页">
-        <span class="seal" aria-hidden="true">拾</span>
+        <svg class="mochi" viewBox="0 0 120 120" aria-hidden="true">
+          <path d="M60 36 C60 28 60 22 60 16" stroke="#5E8C61" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M60 24 C49 22 42 13 45 5 C56 8 62 15 60 24Z" fill="#7FA87A"/>
+          <path d="M60 24 C71 22 78 13 75 5 C64 8 58 15 60 24Z" fill="#9BC495"/>
+          <ellipse cx="60" cy="76" rx="42" ry="38" fill="#FFF6E6" stroke="#EBD9BC" stroke-width="3"/>
+          <circle cx="46" cy="72" r="4" fill="#4A3F33"/>
+          <circle cx="74" cy="72" r="4" fill="#4A3F33"/>
+          <circle cx="37" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
+          <circle cx="83" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
+          <path d="M53 84 C57 89 63 89 67 84" stroke="#4A3F33" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
         <span class="brand-name">拾遗</span>
         <span class="brand-tag">学习资料库与复习助手</span>
       </a>
-      <p class="contest">OceanBase 2026 大赛 · Qoder 赛道</p>
       <nav class="nav" aria-label="页面导航">
         <a href="#pain">问题</a>
         <a href="#features">功能</a>
@@ -31,60 +40,69 @@
         <a href="#architecture">技术</a>
         <a href="#reproduce">复现</a>
       </nav>
-      <a class="top-link" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+      <a class="gh-pill" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
     </div>
   </header>
 
   <main id="main">
     <section class="hero" id="top">
-      <div class="shell hero-layout">
+      <div class="shell hero-grid">
         <div class="hero-copy">
           <h1><span class="line">把散落的学习资料，</span><span class="line">捡回成<em>可复习</em>的知识库。</span></h1>
-          <p class="hero-lede">PDF、Markdown、TXT 收进本地库。问一句，就找回原文、文件名和块号；标记一次，薄弱点留在复习页，重启也不丢。</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">查看源码 <span aria-hidden="true">↗</span></a>
-            <a class="link-inline" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">按 README 跑起来 <span aria-hidden="true">↗</span></a>
+            <a class="btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">查看源码 <span aria-hidden="true">↗</span></a>
+            <a class="link-inline" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">按 README 跑起来 <span aria-hidden="true">→</span></a>
           </div>
-          <p class="hero-facts">本地运行 · 无需 LLM API · 重启不丢状态</p>
+          <p class="hero-facts"><span>本地运行</span><span>无需 LLM API</span><span>重启不丢状态</span></p>
         </div>
 
-        <figure class="sheet-wrap" aria-label="检索结果与复习批注示意">
-          <div class="sheet">
-            <p class="sheet-head"><span>检索记录</span><span>课程 db · 3 个文件</span></p>
-            <div class="sheet-query">
-              <span class="q-label">问</span>
-              <strong>写放大</strong>
-              <span class="sheet-enter" aria-hidden="true">↵</span>
-            </div>
-            <p class="sheet-file"><strong>数据库笔记.md</strong><span>第 2 块</span><span>距离 0.0325</span></p>
-            <p class="sheet-passage">同一个数据可能在内存表刷盘、层级合并和底层压缩中被<mark>反复重写</mark>。写放大越高，磁盘带宽消耗越大。</p>
-            <div class="sheet-memory">
-              <span class="memory-label">批注</span>
-              <p>这里总记混。标记后，下次打开先看这条。</p>
-              <span class="memory-state">已写入 PowerContext · 重启仍在</span>
-            </div>
+        <div class="demo" aria-label="检索结果与复习示意">
+          <div class="query">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <span class="q-text">写放大是什么</span>
+            <span class="q-go">检索</span>
           </div>
-          <figcaption class="sheet-caption">检索结果、出处与后续复习，落在同一张纸上。</figcaption>
-        </figure>
+          <article class="result">
+            <div class="result-top">
+              <span class="file-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>
+              <span class="source">数据库笔记.md</span>
+              <span class="loc">第 2 块</span>
+              <span class="tag">全文 + 向量</span>
+            </div>
+            <p class="snippet">同一个数据可能在内存表刷盘、层级合并和底层压缩中被<mark>反复重写</mark>。写放大越高，磁盘带宽消耗越大。</p>
+            <div class="result-foot">
+              <span class="dist-label">相关度距离</span><span class="dist">0.0325</span>
+              <span class="mini"><span class="mini-btn weak">标记不懂</span><span class="mini-btn">已掌握</span></span>
+            </div>
+          </article>
+          <svg class="mascot" viewBox="0 0 120 120" aria-hidden="true">
+            <path d="M60 36 C60 28 60 22 60 16" stroke="#5E8C61" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M60 24 C49 22 42 13 45 5 C56 8 62 15 60 24Z" fill="#7FA87A"/>
+            <path d="M60 24 C71 22 78 13 75 5 C64 8 58 15 60 24Z" fill="#9BC495"/>
+            <ellipse cx="60" cy="76" rx="42" ry="38" fill="#FFF6E6" stroke="#EBD9BC" stroke-width="3"/>
+            <circle cx="46" cy="72" r="4" fill="#4A3F33"/>
+            <circle cx="74" cy="72" r="4" fill="#4A3F33"/>
+            <circle cx="37" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
+            <circle cx="83" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
+            <path d="M53 84 C57 89 63 89 67 84" stroke="#4A3F33" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+          <p class="demo-cap">问一句，找回原文与出处；标记一次，下次先复习。</p>
+        </div>
       </div>
     </section>
 
     <section class="section pain" id="pain" aria-labelledby="pain-title">
       <div class="shell">
-        <header class="section-head">
-          <p class="section-label">问题</p>
-          <h2 id="pain-title">资料在，答案不在。</h2>
-          <p class="section-intro">两种最常见的失忆，正好对应两个技术缺口。</p>
-        </header>
-        <div class="section-body pain-grid">
-          <article>
+        <h2 id="pain-title" class="section-title">资料在，答案不在。</h2>
+        <div class="pain-grid">
+          <article class="pain-item">
             <h3>看过，但找不到</h3>
-            <p>关键词搜索不认语义，答案明明在某个 PDF 或笔记里，却只能一页页翻；找到了，出处也留不下来。</p>
+            <p>答案在某个 PDF 或笔记里，却只能一页页翻，出处也留不下。</p>
             <p class="pain-fix"><span aria-hidden="true">→</span> seekdb 混合检索，把原文、文件名、块号一起带回来。</p>
           </article>
-          <article>
+          <article class="pain-item">
             <h3>不会，但记不住</h3>
-            <p>复习凭感觉，上次卡住的地方没有形成记录；换一个会话、重启一次，一切又从头开始。</p>
+            <p>上次卡住的地方没有记录，重启一次就从头开始。</p>
             <p class="pain-fix"><span aria-hidden="true">→</span> PowerContext 记住薄弱点，下次打开先提醒。</p>
           </article>
         </div>
@@ -93,29 +111,25 @@
 
     <section class="section features" id="features" aria-labelledby="features-title">
       <div class="shell">
-        <header class="section-head">
-          <p class="section-label">功能</p>
-          <h2 id="features-title">一次学习，走完三步。</h2>
-          <p class="section-intro">从资料入库到下次复习，每一步都有明确的技术承接。</p>
-        </header>
-        <ol class="section-body card-row">
+        <h2 id="features-title" class="section-title">一次学习，走完三步。</h2>
+        <ol class="card-row">
           <li class="index-card">
             <div class="card-head"><span class="card-code">F1</span><span class="card-tech">seekdb</span></div>
             <h3>资料导入</h3>
-            <p>PDF、Markdown、TXT 自动解析、切块并写入本地 seekdb；来源文件名、位置和课程标签一起保留。</p>
-            <p class="card-foot">500 字切块 · 50 字重叠 · 重复导入覆盖旧片段</p>
+            <p>PDF、Markdown、TXT 解析、切块写入本地 seekdb，保留文件名与位置。</p>
+            <p class="card-foot">500 字切块 · 重复导入覆盖旧片段</p>
           </li>
           <li class="index-card">
             <div class="card-head"><span class="card-code">F2</span><span class="card-tech">seekdb</span></div>
             <h3>混合检索</h3>
-            <p>自然语言提问，向量语义与全文关键词同时召回，再用 RRF 融合排序；每条结果都带出处和距离。</p>
-            <p class="card-foot">向量 + <code>$contains</code> + 课程过滤 · 关键词高亮</p>
+            <p>向量语义与全文关键词同时召回，RRF 融合排序，结果带出处和距离。</p>
+            <p class="card-foot">向量 + <code>$contains</code> + 课程过滤</p>
           </li>
           <li class="index-card">
             <div class="card-head"><span class="card-code">F3</span><span class="card-tech">PowerContext</span></div>
             <h3>复习记忆</h3>
-            <p>标记「不懂 / 已掌握」写入 PowerContext；下次打开或检索前召回，薄弱点排在复习建议前面。</p>
-            <p class="card-foot">Source + Memory · 固定 scope · 重启不丢</p>
+            <p>标记「不懂 / 已掌握」写入 PowerContext，下次打开先召回薄弱点。</p>
+            <p class="card-foot">固定 scope · 重启不丢</p>
           </li>
         </ol>
       </div>
@@ -123,32 +137,20 @@
 
     <section class="section workbench" id="workbench" aria-labelledby="workbench-title">
       <div class="shell">
-        <header class="section-head split">
-          <p class="section-label">界面</p>
-          <h2 id="workbench-title">导入、检索、<span class="nowrap">复习</span>，都在同一页。</h2>
-          <p class="section-intro">原生 HTML/CSS/JS，1280×720 下无横向滚动。</p>
-        </header>
-
-        <div class="section-body">
-          <figure class="plate">
-            <a class="shot-link" href="./assets/app-ui.png" target="_blank" rel="noopener" aria-label="打开应用界面大图">
-              <img src="./assets/app-ui.png" width="2560" height="1440" alt="拾遗应用界面：左侧是导入与优先复习，右侧检索「写放大」的结果，每条带文件名、块号与相关度距离。">
-            </a>
-            <figcaption>界面实拍 · 检索「写放大」返回 5 条；左侧优先复习由 PowerContext 跨会话召回。 <a class="zoom-link" href="./assets/app-ui.png" target="_blank" rel="noopener">查看原图 <span aria-hidden="true">↗</span></a></figcaption>
-          </figure>
-        </div>
+        <h2 id="workbench-title" class="section-title">导入、检索、复习，都在同一页。</h2>
+        <figure class="plate">
+          <a class="shot-link" href="./assets/app-ui.png" target="_blank" rel="noopener" aria-label="打开应用界面大图">
+            <img src="./assets/app-ui.png" width="2880" height="1800" alt="拾遗应用界面：左侧是导入与优先复习，右侧检索「写放大」的结果，每条带文件名、块号与相关度距离。">
+          </a>
+          <figcaption>界面实拍 · 检索「写放大」，左侧复习由 PowerContext 召回。 <a class="zoom-link" href="./assets/app-ui.png" target="_blank" rel="noopener">查看原图 <span aria-hidden="true">↗</span></a></figcaption>
+        </figure>
       </div>
     </section>
 
     <section class="section architecture" id="architecture" aria-labelledby="architecture-title">
       <div class="shell">
-        <header class="section-head">
-          <p class="section-label">技术分工</p>
-          <h2 id="architecture-title">seekdb 管检索，<br class="title-break">PowerContext 管记忆。</h2>
-          <p class="section-intro">两项技术同时使用，分工不重叠：资料只进 seekdb，学习者状态只进 PowerContext。</p>
-        </header>
-
-        <div class="section-body ledger">
+        <h2 id="architecture-title" class="section-title">seekdb 管检索，<br class="title-break">PowerContext 管记忆。</h2>
+        <div class="ledger">
           <article class="ledger-col">
             <header class="ledger-head">
               <h3>知识检索</h3>
@@ -161,7 +163,7 @@
               <li class="is-key"><span class="flow-name">混合检索</span><span class="flow-note">knn + $contains + where</span></li>
               <li><span class="flow-name">原文与出处</span><span class="flow-note">文件名 · 块号 · 距离</span></li>
             </ol>
-            <p class="ledger-foot"><code>RRF</code> 融合排序 · 数据落盘 <code>./data/seekdb</code></p>
+            <p class="ledger-foot"><code>RRF</code> 融合排序 · 落盘 <code>./data/seekdb</code></p>
           </article>
 
           <article class="ledger-col">
@@ -172,73 +174,42 @@
             <ol class="flow">
               <li><span class="flow-name">标记 / 提问</span><span class="flow-note">不懂 / 已掌握</span></li>
               <li><span class="flow-name">Source 采集</span><span class="flow-note">学习行为</span></li>
-              <li><span class="flow-name">Memory 显式写入</span><span class="flow-note">薄弱点 · 备注</span></li>
+              <li><span class="flow-name">Memory 写入</span><span class="flow-note">薄弱点 · 备注</span></li>
               <li class="is-key"><span class="flow-name">context/prepare</span><span class="flow-note">固定 scope</span></li>
               <li><span class="flow-name">优先复习建议</span><span class="flow-note">下次打开先看到</span></li>
             </ol>
             <p class="ledger-foot"><code>scope=studydesk</code> · SQLite 持久化，重启不丢</p>
           </article>
         </div>
-
-        <p class="section-body division"><span class="division-stamp">不重复</span> 应用只做编排，不另建影子库。</p>
+        <p class="division">应用只做编排，不另建影子库。</p>
       </div>
     </section>
 
     <section class="section reproduce" id="reproduce" aria-labelledby="reproduce-title">
-      <div class="shell">
-        <header class="section-head split">
-          <p class="section-label">复现</p>
-          <h2 id="reproduce-title">在自己的机器上跑起来。</h2>
-          <p class="section-intro">源码、样例资料与一键验证脚本都在仓库里。按 README 准备模型与依赖，再启动 PowerContext 和拾遗。</p>
-        </header>
-
-        <div class="section-body reproduce-body">
-          <div class="reproduce-copy">
-            <p>主工程位于 <code>qoder/studydesk/</code>，包含 FastAPI 服务、原生单页界面、样例资料与验证日志。</p>
-            <p class="repo-line">github.com/xihale/powercontext</p>
-            <div class="reproduce-links">
-              <a class="btn btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">打开仓库 <span aria-hidden="true">↗</span></a>
-              <a class="link-inline" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">阅读 README <span aria-hidden="true">↗</span></a>
-            </div>
+      <div class="shell reproduce-grid">
+        <div class="reproduce-copy">
+          <h2 id="reproduce-title" class="section-title">在自己的机器上跑起来。</h2>
+          <p>主工程在 <code>qoder/studydesk/</code>，含 FastAPI 服务、原生单页界面、样例资料与验证脚本。</p>
+          <div class="reproduce-links">
+            <a class="btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">打开仓库 <span aria-hidden="true">↗</span></a>
+            <a class="link-inline" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">阅读 README <span aria-hidden="true">→</span></a>
           </div>
-
-          <div class="terminal">
-            <p class="terminal-bar"><span>本地复现</span><span>bash</span></p>
-            <pre><code><span class="prompt">$</span> bash scripts/seed_model.sh
+        </div>
+        <div class="terminal">
+          <p class="terminal-bar"><span>本地复现</span><span>bash</span></p>
+          <pre><code><span class="prompt">$</span> bash scripts/seed_model.sh
 <span class="prompt">$</span> powercontext server run        <span class="comment"># 8000</span>
 <span class="prompt">$</span> .venv/bin/python -m app.main  <span class="comment"># 8001</span>
 <span class="prompt">$</span> bash scripts/run_verify.sh     <span class="comment"># S1–S5</span></code></pre>
-            <p class="terminal-note">完整依赖、模型种子与手动步骤见 README。一键脚本会自行启动、重启并停止应用。</p>
-          </div>
+          <p class="terminal-note">完整步骤见 README。</p>
         </div>
       </div>
     </section>
 
     <section class="section impact" id="impact" aria-labelledby="impact-title">
       <div class="shell">
-        <header class="section-head">
-          <p class="section-label">使用效果</p>
-          <h2 id="impact-title">等真实数据。</h2>
-          <p class="section-intro">发布后补充访问统计、试用反馈与复习提效，不预填虚构指标。</p>
-        </header>
-
-        <div class="section-body impact-table">
-          <div class="impact-cell">
-            <span>站点访问</span>
-            <strong>—</strong>
-            <p>Qoder Sites 访问统计</p>
-          </div>
-          <div class="impact-cell">
-            <span>试用反馈</span>
-            <strong>—</strong>
-            <p>同学真实使用记录与问题清单</p>
-          </div>
-          <div class="impact-cell">
-            <span>复习提效</span>
-            <strong>—</strong>
-            <p>检索耗时与薄弱点回看次数</p>
-          </div>
-        </div>
+        <h2 id="impact-title" class="section-title">使用效果，等真实数据。</h2>
+        <p class="impact-note">发布后补充：站点访问、试用反馈、复习提效。不预填虚构指标。</p>
       </div>
     </section>
   </main>
@@ -246,10 +217,20 @@
   <footer class="site-footer">
     <div class="shell footer-inner">
       <a class="footer-brand" href="#top" aria-label="返回拾遗首页">
-        <span class="seal" aria-hidden="true">拾</span>
+        <svg class="mochi" viewBox="0 0 120 120" aria-hidden="true">
+          <path d="M60 36 C60 28 60 22 60 16" stroke="#5E8C61" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M60 24 C49 22 42 13 45 5 C56 8 62 15 60 24Z" fill="#7FA87A"/>
+          <path d="M60 24 C71 22 78 13 75 5 C64 8 58 15 60 24Z" fill="#9BC495"/>
+          <ellipse cx="60" cy="76" rx="42" ry="38" fill="#FFF6E6" stroke="#EBD9BC" stroke-width="3"/>
+          <circle cx="46" cy="72" r="4" fill="#4A3F33"/>
+          <circle cx="74" cy="72" r="4" fill="#4A3F33"/>
+          <circle cx="37" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
+          <circle cx="83" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
+          <path d="M53 84 C57 89 63 89 67 84" stroke="#4A3F33" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
         <strong>拾遗</strong>
       </a>
-      <p>本地优先的学习资料库与复习助手。资料留在本地，学习状态跨会话延续。</p>
+      <p>资料留在本地，学习状态跨会话延续。</p>
       <div class="footer-links">
         <a href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">运行说明</a>
@@ -257,5 +238,22 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (!("IntersectionObserver" in window)) return;
+      document.documentElement.classList.add("js");
+      var blocks = Array.prototype.slice.call(document.querySelectorAll(".section .shell"));
+      blocks.forEach(function (el) { el.classList.add("reveal"); });
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      }, { rootMargin: "0px 0px -10% 0px", threshold: 0.08 });
+      blocks.forEach(function (el) { io.observe(el); });
+      setTimeout(function () { blocks.forEach(function (el) { el.classList.add("in"); }); }, 2000);
+    })();
+  </script>
 </body>
 </html>

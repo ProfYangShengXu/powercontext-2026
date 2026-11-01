@@ -20,6 +20,9 @@
 
   const TERM_SEPARATORS = /[\s，,。；;：:、？！?!（）()【】\[\]"'“”‘’/\\|]+/;
 
+  const MOCHI_SVG =
+    '<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M60 36 C60 28 60 22 60 16" stroke="#5E8C61" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M60 24 C49 22 42 13 45 5 C56 8 62 15 60 24Z" fill="#7FA87A"/><path d="M60 24 C71 22 78 13 75 5 C64 8 58 15 60 24Z" fill="#9BC495"/><ellipse cx="60" cy="76" rx="42" ry="38" fill="#FFF6E6" stroke="#EBD9BC" stroke-width="3"/><circle cx="46" cy="72" r="4" fill="#4A3F33"/><circle cx="74" cy="72" r="4" fill="#4A3F33"/><circle cx="37" cy="84" r="5" fill="#F6C9B0" opacity=".7"/><circle cx="83" cy="84" r="5" fill="#F6C9B0" opacity=".7"/><path d="M53 84 C57 89 63 89 67 84" stroke="#4A3F33" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+
   let searching = false;
   let reviewLoading = false;
   let lastSearch = null;
@@ -162,7 +165,12 @@
       const mark = document.createElement("span");
       mark.className = "state-mark";
       mark.setAttribute("aria-hidden", "true");
-      mark.textContent = kind === "error" ? "!" : "寻";
+      if (kind === "error") {
+        mark.classList.add("is-glyph");
+        mark.textContent = "!";
+      } else {
+        mark.innerHTML = MOCHI_SVG;
+      }
       card.append(mark);
     }
 
