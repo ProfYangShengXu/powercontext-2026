@@ -213,7 +213,7 @@ python3 -m http.server 8010 --bind 127.0.0.1
 # 打开 http://127.0.0.1:8010/
 ```
 
-展示站不依赖应用进程，也不包含运行时数据。正式发布通过 Qoder Sites 完成，地址发布后补入 `../docs/SUBMISSION.md`。
+展示站不依赖应用进程，也不包含运行时数据。线上地址：<https://shiyi-study-0e8e9bd2mk9.qoder.zone>（Qoder Sites，公开访问）。
 
 ## 配置
 

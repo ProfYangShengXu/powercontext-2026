@@ -2,13 +2,13 @@
 
 对照官方要求逐项核对。**评审认平台记录的固定提交**：本地改完没推没提等于没做。
 
-2026-11-01：代码、展示站与留档已收口；待办只剩发布与平台动作——Sites 上线 → A1 URL、`dev-records/UID.txt`、推送 `2026-competition-ecosystem`、B5/B6 材料。
+2026-11-01：站点已发布并设为公开（匿名访问 200）；待办只剩 UID/B5/B6 材料、推送 `2026-competition-ecosystem`、平台表单与 D 项回读。
 
 ## A. 平台表单（登录大赛测试平台 → Qoder 赛题 → 立即提测）
 
 | # | 字段 | 填什么 | 完成前检查 |
 |---|---|---|---|
-| A1 | 项目网站网址 | Qoder Sites 发布的完整 URL | **无痕窗口**打开成功；站点可见范围=「任何人都可访问」 |
+| A1 | 项目网站网址 | `https://shiyi-study-0e8e9bd2mk9.qoder.zone` | 2026-11-01 匿名访问 200；可见范围=public |
 | A2 | 代码仓库地址 | `https://github.com/xihale/powercontext`（公开） | **需先推送 `2026-competition-ecosystem`**；评审能在 `qoder/studydesk/` 看到完整工程 |
 | A3 | Qoder 账号 UID | 设置 → 个人资料 → 编辑 里复制 | 与 Sites 站点归属一致；待填 `dev-records/UID.txt` |
 | A4 | 分支 / Commit | 分支固定 `2026-competition-ecosystem`；Commit 以提交时 C5 输出为准（本文件更新后 SHA 会变） | 基线自查 C1 通过 |
@@ -26,12 +26,12 @@
 
 ## 发布与留痕（手动）
 
-1. Qoder → Sites → 创建站点，源目录选 `qoder/studydesk/site/`，部署。
-2. 可见范围选「任何人都可访问」。
-3. 无痕窗口打开站点 URL，确认无需登录即可访问。
-4. 截图 Sites 发布设置页（画面需包含可见范围选项），保存为 `dev-records/M5-site/sites-publish-settings.png`。
-5. 把完整 URL 填入上表 A1；UID 填入 `dev-records/UID.txt`。
-6. 推送 `2026-competition-ecosystem`，使 A2 的仓库与站内 README 链接可访问。
+1. [x] 站点已创建并发布，源目录 `qoder/studydesk/site/`。
+2. [x] 可见范围已设为「任何人都可访问」（public）。
+3. [x] 匿名访问返回 200；线上实拍存于 `dev-records/M5-site/site-live.png`。
+4. [ ] 截图 Sites 发布设置页（画面需包含可见范围选项），保存为 `dev-records/M5-site/sites-publish-settings.png`。
+5. [x] 完整 URL 已填入上表 A1；[ ] UID 填入 `dev-records/UID.txt`。
+6. [ ] 推送 `2026-competition-ecosystem`，使 A2 的仓库与站内 README 链接可访问。
 
 ## C. 提交前自查（逐条执行）
 
@@ -55,7 +55,7 @@ grep -rniE "C:\\\\Users|/home/[a-z]+/|/Users/" qoder/studydesk/ qoder/docs/ qode
 echo "SHA: $(git rev-parse HEAD)"; echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
 ```
 
-2026-11-01 自查记录：C1 `OK`；C2、C3 无输出；忽略规则覆盖 `data/ logs/ .env __pycache__/`。C4 待站点发布后执行。
+2026-11-01 自查记录：C1 `OK`；C2、C3 无输出；忽略规则覆盖 `data/ logs/ .env __pycache__/`；C4 匿名访问站点返回 200（public）。
 
 ## D. 提交后
 
