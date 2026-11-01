@@ -200,6 +200,17 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8088/   # 200
 
 你会看到阿福每一轮都把之前的账念出来。**保持在同一个对话里**才会累积；点「新对话」等于换了一个 PowerContext scope，阿福会「失忆」。
 
+### 5.6 数据怎么来 / 怎么清
+
+- **不需要预灌数据**：第一次对话时，sidecar 用 `conversation_id` 幂等创建 PowerContext scope，并把这句话写成第 1 条记忆。
+- **想让它「有旧账」**：在同一对话里继续说话即可；Dify 的 `conversation_id` 不变，scope 就不变。
+- **想清空**：在 Dify 里点「新对话」→ 新的 `conversation_id` → 新 scope；旧数据仍保留在 PowerContext 里（可用旧 id 调 sidecar `/memory/list` 查）。
+- **想手工灌一条**（调试用）：
+  ```bash
+  curl -X POST http://127.0.0.1:8787/memory/write \
+    -H 'X-Session-Id: <dify conversation_id>' --data-binary '我把你的茶壶藏起来了'
+  ```
+
 ---
 
 ## 6. 验证样例（本机真实跑出来的记录）
