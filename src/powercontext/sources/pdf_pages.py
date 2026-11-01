@@ -61,6 +61,9 @@ PDF_PAGE_DEFINITION_VERSION = "1"
 
 _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 _TOKEN = re.compile(r"[a-z]+|\d+")
+# Document identities are split into alphanumeric runs so an abbreviation with a
+# digit (``3M_2022_10K`` -> ``3m``) stays one token and still matches the question.
+_DOCUMENT_TOKEN = re.compile(r"[a-z0-9]+")
 
 # Query-side vocabulary that carries no discriminating evidence in financial
 # filings: English function words, question scaffolding, and the boilerplate that
@@ -349,19 +352,24 @@ async def search_pdf_pages(
     memory_ref, entries = await _list_entries(memory)
     if entries:
         index = _cached_index(memory_ref, entries)
-        ranked = [index.entries[position] for _score, position in index.rank(question)]
+        allowed = index.document_positions(question)
+        ranked = [
+            index.entries[position]
+            for _score, position in index.rank(question)
+            if allowed is None or position in allowed
+        ]
         search_ranked = await _search_stage(memory, question, limit)
         fused = _fuse(
             ranked,
-            search_ranked,
+            _within(index, allowed, search_ranked),
             max(limit, _RERANK_DEPTH),
-            index.section_ranked(question),
+            _within(index, allowed, index.section_ranked(question)),
             # Independent priors, never multipliers: a value question gets the
             # numeric-density arm, an applicability question gets the business
             # overview arm; both stay out of the way of every other question.
             (
-                (index.numeric_ranked(question), _NUMERIC_WEIGHT),
-                (index.overview_ranked(question), _OVERVIEW_WEIGHT),
+                (_within(index, allowed, index.numeric_ranked(question)), _NUMERIC_WEIGHT),
+                (_within(index, allowed, index.overview_ranked(question)), _OVERVIEW_WEIGHT),
             ),
         )
         # Recall@20 is a membership gate: promoting pages from 21-50 into the
@@ -707,6 +715,7 @@ class _PageIndex:
 
     __slots__ = (
         "entries",
+        "document_ids",
         "tokens",
         "passages",
         "page_terms",
@@ -729,6 +738,9 @@ class _PageIndex:
         numeric_density: Sequence[float] | None = None,
     ) -> None:
         self.entries = entries
+        # The standard projection leads with the document identity, so the first
+        # line of an entry's text is the document this page belongs to.
+        self.document_ids = [_document_id_of_entry(record) for record in entries]
         self.tokens = tokens
         self.passages = passages
         self.page_terms = page_terms
@@ -795,6 +807,48 @@ class _PageIndex:
             citation.entry_version_id,
         )
         return self.positions.get(key)
+
+    def document_positions(self, question: str) -> frozenset[int] | None:
+        """Positions belonging to the document the question unambiguously names.
+
+        One collection can hold several filings.  A question that names a
+        company must not spend its limited page budget on the other companies'
+        reports, so when exactly one document id is referenced by a token that
+        occurs in no other document id (``pepsico``, ``3m``, ...), the other
+        documents are removed from every ranking arm.  A single-document
+        collection, or a question that names no document / several documents,
+        keeps the previous behaviour.
+        """
+
+        document_ids = list(dict.fromkeys(self.document_ids))
+        if len(document_ids) <= 1:
+            return None
+        question_terms = set(_DOCUMENT_TOKEN.findall(unicodedata.normalize("NFC", question).casefold()))
+        if not question_terms:
+            return None
+        frequency: Counter[str] = Counter()
+        terms_by_document = {
+            document_id: set(_DOCUMENT_TOKEN.findall(document_id.casefold()))
+            for document_id in document_ids
+        }
+        for terms in terms_by_document.values():
+            frequency.update(terms)
+        scores = {
+            document_id: sum(
+                1 for term in terms if frequency[term] == 1 and term in question_terms
+            )
+            for document_id, terms in terms_by_document.items()
+        }
+        ordered = sorted(scores.items(), key=lambda item: -item[1])
+        best_document, best_score = ordered[0]
+        runner_up = ordered[1][1] if len(ordered) > 1 else 0
+        if best_score < 1 or best_score <= runner_up:
+            return None
+        return frozenset(
+            position
+            for position, document_id in enumerate(self.document_ids)
+            if document_id == best_document
+        )
 
     def bm25(self, index: int, plan: _QueryPlan) -> float:
         """Best-passage BM25, the standard MaxP baseline for a localized answer."""
@@ -1086,6 +1140,27 @@ def _numeric_density(text: str) -> float:
     if not tokens:
         return 0.0
     return sum(1 for token in tokens if token.isdigit()) / len(tokens)
+
+
+def _document_id_of_entry(record: Any) -> str:
+    """Recover the document identity from the standard projection's first line."""
+
+    text = getattr(getattr(record, "entry", None), "text", "")
+    if not isinstance(text, str):
+        return ""
+    return text.split("\n", 1)[0]
+
+
+def _within(
+    index: _PageIndex,
+    allowed: frozenset[int] | None,
+    citations: Sequence[MemoryCitation],
+) -> list[MemoryCitation]:
+    """Keep only the citations that belong to the selected document, if any."""
+
+    if allowed is None:
+        return list(citations)
+    return [citation for citation in citations if index.position_of(citation) in allowed]
 
 
 def _build_index(entries: list[Any]) -> _PageIndex:

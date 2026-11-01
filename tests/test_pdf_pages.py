@@ -164,3 +164,56 @@ def test_rerank_degrades_to_noop_when_the_reranker_raises(monkeypatch) -> None:
     monkeypatch.setattr(module, "_select_reranker", lambda: _Broken())
     candidates = [_Record("a").citation, _Record("b").citation]
     assert module._rerank("q", module._PageIndex([], [], [], [], []), candidates) == candidates
+
+
+class _TextEntry:
+    def __init__(self, entry_id: str, text: str) -> None:
+        self.entry_id = entry_id
+        self.entry_version_id = f"{entry_id}-v1"
+        self.memory_artifact_id = "memory"
+        self.created_in_revision = 1
+        self.text = text
+
+
+class _TextRecord:
+    def __init__(self, entry_id: str, text: str) -> None:
+        self.entry = _TextEntry(entry_id, text)
+
+    @property
+    def citation(self):
+        entry = self.entry
+
+        class _Citation:
+            memory_ref = ArtifactRef(family="memory", artifact_id="memory", revision=1)
+            entry_id = entry.entry_id
+            entry_version_id = entry.entry_version_id
+
+        return _Citation()
+
+
+def test_document_positions_select_the_document_named_in_the_question() -> None:
+    from powercontext.sources.pdf_pages import _build_index
+
+    records = [
+        _TextRecord("a1", "ALPHA_2022_10K\nwidget revenue 42"),
+        _TextRecord("a2", "ALPHA_2022_10K\nwidget revenue 43"),
+        _TextRecord("b1", "BETA_2022_10K\nwidget revenue 42"),
+        _TextRecord("b2", "BETA_2022_10K\nwidget revenue 43"),
+    ]
+    index = _build_index(records)
+    assert index.document_positions("What does ALPHA report about widget revenue?") == frozenset({0, 1})
+    assert index.document_positions("What does Beta report about widget revenue?") == frozenset({2, 3})
+    # No document is named: do not narrow the scope.
+    assert index.document_positions("What is the widget revenue?") is None
+    # Two documents are named: ambiguous, keep the scope.
+    assert index.document_positions("Compare ALPHA and BETA widget revenue") is None
+
+
+def test_document_positions_are_inert_for_one_document() -> None:
+    from powercontext.sources.pdf_pages import _build_index
+
+    records = [
+        _TextRecord("a1", "ALPHA_2022_10K\nwidget revenue 42"),
+        _TextRecord("a2", "ALPHA_2022_10K\nwidget revenue 43"),
+    ]
+    assert _build_index(records).document_positions("What does ALPHA report?") is None
