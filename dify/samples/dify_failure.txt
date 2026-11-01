@@ -1,0 +1,11 @@
+# 真实 Dify 1.18.0 失败语义（sidecar 已停止）
+$ curl -X POST http://127.0.0.1:8088/v1/chat-messages -H "Authorization: Bearer <app-key>" \
+    -d '{"inputs":{},"query":"我把你的茶壶藏起来了","response_mode":"blocking","conversation_id":"","user":"reviewer"}'
+{"code":"invalid_param","message":"Run failed: Request failed with status code 503","status":400}
+[http 400]
+
+# 重启 sidecar 后，同一请求恢复（新会话 -> 新 scope）
+... 1 笔账 ... [http 200]
+
+# 重启 sidecar 后，沿用旧 conversation_id 仍能续上（幂等 scope 映射）
+... 4 笔账（含重启前的 3 笔）... [http 200]

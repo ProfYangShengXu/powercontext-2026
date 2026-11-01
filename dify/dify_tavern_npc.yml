@@ -1,0 +1,412 @@
+version: 0.7.0
+kind: app
+app:
+  name: 记仇的酒馆 NPC · PowerContext
+  description: 一个会记住你每次恶作剧的酒馆 NPC。记忆真实写入 PowerContext（按会话分 scope），每轮检索后进入回复。
+  icon: 🍶
+  icon_type: emoji
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  use_icon_as_answer_icon: false
+dependencies: []
+workflow:
+  conversation_variables: []
+  environment_variables:
+  - id: 9c1f6a2e-6f1e-4a6e-9f5e-8d0c1b2a3f40
+    name: SIDECAR_BASE_URL
+    value: http://host.docker.internal:8787
+    value_type: string
+    description: sidecar 地址。Dify 在 Docker 里时用 host.docker.internal；sidecar 也在 compose 里时改成 http://sidecar:8787
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: 你是酒馆的常客。阿福是店小二——上次你把他茶里的糖换成盐，他好像还记得。说点什么吧。
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 阿福，今天茶里我什么都没放。
+    - 你板凳腿怎么短了一截？
+    - 我把你的抹布藏到酒窖了。
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    nodes:
+    - id: start
+      type: custom
+      data:
+        type: start
+        title: 开始
+        desc: 用户对酒馆 NPC 说的话就是本轮输入
+        variables: []
+      position:
+        x: 40
+        y: 300
+      positionAbsolute:
+        x: 40
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+    - id: write_memory
+      type: custom
+      data:
+        desc: 把本轮用户输入作为一条记忆写进 PowerContext（按会话隔离 scope）
+        title: ① 写入记忆
+        type: http-request
+        method: post
+        url: '{{#env.SIDECAR_BASE_URL#}}/memory/write'
+        authorization:
+          type: no-auth
+          config: null
+        headers: |-
+          Content-Type: text/plain; charset=utf-8
+          X-Session-Id: {{#sys.conversation_id#}}
+        params: ''
+        body:
+          type: raw-text
+          data:
+          - key: ''
+            type: text
+            value: '{{#sys.query#}}'
+        timeout:
+          connect: 5
+          read: 20
+          write: 10
+        retry_config:
+          retry_enabled: true
+          max_retries: 1
+          retry_interval: 300
+        ssl_verify: true
+        variables: []
+      position:
+        x: 340
+        y: 300
+      positionAbsolute:
+        x: 340
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      width: 244
+      height: 110
+    - id: search_memory
+      type: custom
+      data:
+        desc: 用本轮输入在 PowerContext 中做全文检索，取回相关旧账
+        title: ② 检索记忆
+        type: http-request
+        method: post
+        url: '{{#env.SIDECAR_BASE_URL#}}/memory/search'
+        authorization:
+          type: no-auth
+          config: null
+        headers: |-
+          Content-Type: text/plain; charset=utf-8
+          X-Session-Id: {{#sys.conversation_id#}}
+        params: ''
+        body:
+          type: raw-text
+          data:
+          - key: ''
+            type: text
+            value: '{{#sys.query#}}'
+        timeout:
+          connect: 5
+          read: 20
+          write: 10
+        retry_config:
+          retry_enabled: true
+          max_retries: 1
+          retry_interval: 300
+        ssl_verify: true
+        variables: []
+      position:
+        x: 640
+        y: 300
+      positionAbsolute:
+        x: 640
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      width: 244
+      height: 110
+    - id: list_memory
+      type: custom
+      data:
+        desc: 从 PowerContext 读取该会话的全部记忆条目，形成账本
+        title: ③ 读取全部记忆
+        type: http-request
+        method: post
+        url: '{{#env.SIDECAR_BASE_URL#}}/memory/list'
+        authorization:
+          type: no-auth
+          config: null
+        headers: |-
+          Content-Type: text/plain; charset=utf-8
+          X-Session-Id: {{#sys.conversation_id#}}
+        params: ''
+        body:
+          type: none
+          data: []
+        timeout:
+          connect: 5
+          read: 20
+          write: 10
+        retry_config:
+          retry_enabled: true
+          max_retries: 1
+          retry_interval: 300
+        ssl_verify: true
+        variables: []
+      position:
+        x: 940
+        y: 300
+      positionAbsolute:
+        x: 940
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      width: 244
+      height: 110
+    - id: compose_reply
+      type: custom
+      data:
+        desc: 把本轮写入、检索和全部记忆清单合成阿福的回复。任何一侧失败都会抛错，而不是编答案。
+        title: 阿福的回复
+        type: code
+        code_language: python3
+        code: |
+          """The tavern NPC's reply composer.
+
+          This module is the single source of truth for the deterministic ``main`` function
+          that is embedded verbatim into the Dify Code node (see ``tools/build_dsl.py``)
+          and imported by ``samples/replay.py``.  Keeping one implementation means the
+          three sample transcripts are produced by exactly the same code Dify runs.
+
+          The function deliberately uses only ``json`` so the Dify sandbox can execute it.
+          It raises on malformed input instead of inventing an answer: a broken recall
+          must fail the run, not be papered over.
+          """
+
+          import json
+
+          MAX_LISTED_MEMORIES = 8
+
+
+          def _load(raw, label: str) -> dict:
+              if raw is None or str(raw).strip() == "":
+                  raise ValueError(f"{label} response is empty; the sidecar did not answer")
+              try:
+                  value = json.loads(raw)
+              except (TypeError, ValueError) as exc:
+                  raise ValueError(f"{label} response is not JSON: {str(raw)[:160]!r}") from exc
+              if not isinstance(value, dict):
+                  raise ValueError(f"{label} response is not a JSON object")
+              if value.get("ok") is False:
+                  error = value.get("error") or {}
+                  raise ValueError(f"{label} failed: {error.get('code')}: {error.get('message')}")
+              return value
+
+
+          def _short(text: str, limit: int = 28) -> str:
+              text = " ".join(str(text).split())
+              return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+          def main(write_body: str, search_body: str, list_body: str, query: str) -> dict:
+              written = _load(write_body, "memory/write")
+              found = _load(search_body, "memory/search")
+              inventory = _load(list_body, "memory/list")
+
+              memories = inventory.get("memories") or []
+              total = int(inventory.get("count") or len(memories))
+              revision = inventory.get("revision")
+              scope_id = inventory.get("scope_id") or written.get("scope_id") or "?"
+              duplicate = bool(written.get("duplicate"))
+              hits = found.get("hits") or []
+              query = (query or "").strip() or str(written.get("text") or "").strip()
+
+              lines: list[str] = []
+              lines.append("（阿福把抹布往肩上一搭，斜眼看你）")
+              lines.append("「又——是——你。」")
+              if total == 0:
+                  lines.append("「今天还没人整我。你是第一个？」")
+              else:
+                  lines.append(f"「你在我这儿留下的 {total} 笔账，我可一件没忘：」")
+                  shown = memories[:MAX_LISTED_MEMORIES]
+                  for index, memory in enumerate(shown, start=1):
+                      lines.append(f"  {index}. {_short(memory.get('text', ''), 40)}")
+                  if total > len(shown):
+                      lines.append(f"  ……还有 {total - len(shown)} 笔，我懒得念了。")
+
+              if total <= 1:
+                  lines.append("「第一次，我当你手滑。」")
+              elif total == 2:
+                  lines.append("「第二次，我当你喝多了。」")
+              elif total == 3:
+                  lines.append("「第三次……你猜我为什么把茶壶换成了铁的？」")
+              elif total <= 5:
+                  lines.append(f"「第 {total} 次了。我已经把扫帚靠在门后了。」")
+              else:
+                  lines.append(f"「{total} 次了。今天这顿茶钱翻倍，抹布你自己洗。」")
+
+              if duplicate:
+                  lines.append(f"「『{_short(query)}』这句你上次就说过——我记着呢，别想赖账。」")
+
+              relevant = [hit for hit in hits if str(hit.get("text", "")).strip() != query]
+              if relevant:
+                  lines.append(f"「上次你提『{_short(relevant[0].get('text', ''))}』的时候，我就该防着你。」")
+
+              lines.append(
+                  f"（PowerContext · scope {str(scope_id)[:16]}… · 记忆 revision {revision} · "
+                  f"本次检索命中 {len(hits)} 条）"
+              )
+
+              trace = json.dumps(
+                  {
+                      "scope_id": scope_id,
+                      "revision": revision,
+                      "memory_count": total,
+                      "search_mode": found.get("mode"),
+                      "hit_count": len(hits),
+                      "duplicate": duplicate,
+                  },
+                  ensure_ascii=False,
+              )
+              return {
+                  "reply": "\n".join(lines),
+                  "memory_count": total,
+                  "is_duplicate": duplicate,
+                  "trace": trace,
+              }
+        variables:
+        - variable: write_body
+          value_selector:
+          - write_memory
+          - body
+        - variable: search_body
+          value_selector:
+          - search_memory
+          - body
+        - variable: list_body
+          value_selector:
+          - list_memory
+          - body
+        - variable: query
+          value_selector:
+          - sys
+          - query
+        outputs:
+          reply:
+            type: string
+            children: null
+          memory_count:
+            type: number
+            children: null
+          is_duplicate:
+            type: boolean
+            children: null
+          trace:
+            type: string
+            children: null
+      position:
+        x: 1320
+        y: 300
+      positionAbsolute:
+        x: 1320
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      width: 244
+      height: 110
+    - id: answer
+      type: custom
+      data:
+        type: answer
+        title: 回复
+        desc: ''
+        answer: '{{#compose_reply.reply#}}'
+        variables: []
+      position:
+        x: 1620
+        y: 300
+      positionAbsolute:
+        x: 1620
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+    edges:
+    - id: start-write_memory
+      source: start
+      target: write_memory
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: http-request
+      zIndex: 0
+    - id: write_memory-search_memory
+      source: write_memory
+      target: search_memory
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: http-request
+      zIndex: 0
+    - id: search_memory-list_memory
+      source: search_memory
+      target: list_memory
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: http-request
+      zIndex: 0
+    - id: list_memory-compose_reply
+      source: list_memory
+      target: compose_reply
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      zIndex: 0
+    - id: compose_reply-answer
+      source: compose_reply
+      target: answer
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: answer
+      zIndex: 0
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.8
