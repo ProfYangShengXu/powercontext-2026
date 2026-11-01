@@ -2,6 +2,8 @@
 
 对照官方要求逐项核对。**评审认平台记录的固定提交**：本地改完没推没提等于没做。
 
+2026-11-01：代码、展示站与留档已收口；待办只剩发布与平台动作——Sites 上线 → A1 URL、`dev-records/UID.txt`、推送 `2026-competition-ecosystem`、B5/B6 材料。
+
 ## A. 平台表单（登录大赛测试平台 → Qoder 赛题 → 立即提测）
 
 | # | 字段 | 填什么 | 完成前检查 |
@@ -53,7 +55,7 @@ grep -rniE "C:\\\\Users|/home/[a-z]+/|/Users/" qoder/studydesk/ qoder/docs/ qode
 echo "SHA: $(git rev-parse HEAD)"; echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
 ```
 
-2026-10-31 自查记录：C1 `OK`；C2、C3 无输出。C4 待站点发布后执行。
+2026-11-01 自查记录：C1 `OK`；C2、C3 无输出；忽略规则覆盖 `data/ logs/ .env __pycache__/`。C4 待站点发布后执行。
 
 ## D. 提交后
 
