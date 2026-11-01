@@ -112,7 +112,7 @@
     }
 
     setButtonBusy(importSubmit, true, "导入中…");
-    setFeedback("pending", "正在切块、向量化并写入 seekdb，首次导入会稍慢…");
+    setFeedback("pending", "正在切块、向量化并写入 seekdb…");
     importFiles.hidden = true;
 
     try {
@@ -133,7 +133,7 @@
       if (data.ok && data.total_chunks > 0) {
         setFeedback(
           "success",
-          `已写入 ${data.total_chunks} 个片段，来自 ${files.length} 个文件。重复导入会覆盖同课程、同文件的旧片段。`
+          `已写入 ${data.total_chunks} 个片段（${files.length} 个文件），重复导入会覆盖旧片段。`
         );
       } else if (data.total_chunks > 0) {
         setFeedback("warning", `写入 ${data.total_chunks} 个片段，${failed} 项失败，详情见下方列表。`);
@@ -182,7 +182,12 @@
     text.className = "state-detail";
     text.textContent = detail;
 
-    card.append(heading, text);
+    if (title) {
+      card.append(heading);
+    }
+    if (detail) {
+      card.append(text);
+    }
     results.append(card);
   }
 
@@ -261,20 +266,15 @@
       showState(
         "empty",
         "没有找到相关段落",
-        "换个问法，或确认课程标签是否过滤过窄。full-text 分支匹配不到时，语义向量仍会兜底。"
+        "换个问法，或确认课程标签是否过滤过窄。"
       );
       return;
     }
 
     const fragment = document.createDocumentFragment();
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const article = document.createElement("article");
       article.className = "result";
-
-      const rank = document.createElement("span");
-      rank.className = "rank";
-      rank.setAttribute("aria-hidden", "true");
-      rank.textContent = String(index + 1).padStart(2, "0");
 
       const body = document.createElement("div");
       body.className = "result-body";
@@ -338,16 +338,8 @@
 
       foot.append(distanceLabel, distance);
 
-      if (item.doc_id) {
-        const docId = document.createElement("span");
-        docId.className = "docid";
-        docId.textContent = `#${String(item.doc_id).slice(0, 8)}`;
-        docId.title = item.doc_id;
-        foot.append(docId);
-      }
-
       body.append(top, snippet, foot);
-      article.append(rank, body);
+      article.append(body);
       fragment.append(article);
     });
 
@@ -372,7 +364,7 @@
     const spinner = document.createElement("span");
     spinner.className = "spinner spinner-small";
     spinner.setAttribute("aria-hidden", "true");
-    wrapper.append(spinner, document.createTextNode("正在读取跨会话记忆…"));
+    wrapper.append(spinner, document.createTextNode("正在读取记忆…"));
     reviewBody.append(wrapper);
   }
 
@@ -400,7 +392,7 @@
     heading.textContent = "PowerContext 未连接";
 
     const text = document.createElement("span");
-    text.textContent = "请先在 127.0.0.1:8000 启动 PowerContext（powercontext server run），再重试。";
+    text.textContent = "先在 127.0.0.1:8000 启动 PowerContext，再重试。";
     text.title = message || "";
 
     const retry = document.createElement("button");
@@ -419,10 +411,10 @@
 
     if (!suggestions.length) {
       renderReviewEmpty(
-        data.status === "empty" ? "暂无记忆，先去学习吧" : "暂无复习建议",
+        data.status === "empty" ? "暂无记忆" : "暂无复习建议",
         data.status === "empty"
-          ? "在检索结果上点「标记不懂」，这条薄弱点会写进 PowerContext。"
-          : "PowerContext 没有返回可解析的复习条目。"
+          ? "在结果上点「标记不懂」。"
+          : "PowerContext 没有返回可用的复习条目。"
       );
       return;
     }
@@ -432,7 +424,7 @@
     const count = document.createElement("span");
     count.textContent = `${suggestions.length} 条薄弱点记忆`;
     const source = document.createElement("span");
-    source.textContent = "PowerContext · 重启不丢";
+    source.textContent = "PowerContext 记忆";
     meta.append(count, source);
 
     const list = document.createElement("ul");
@@ -547,16 +539,16 @@
     const query = queryInput.value.trim();
     const course = searchCourse.value.trim();
     if (!query) {
-      showState("error", "先写下你的问题", "例如「写放大是什么」，或点一个示例问题。");
-      resultsMeta.textContent = "等待输入问题";
+      showState("error", "先输入问题", "例如「写放大是什么」。");
+      resultsMeta.textContent = "等待输入";
       queryInput.focus();
       return;
     }
 
     searching = true;
     setButtonBusy(searchSubmit, true, "检索中…");
-    resultsMeta.textContent = "正在查询 seekdb…";
-    showState("loading", "正在混合检索…", "向量语义与全文关键词两路召回，再由 RRF 融合排序。");
+    resultsMeta.textContent = "检索中…";
+    showState("loading", "", "");
 
     const started = performance.now();
     try {

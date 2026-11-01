@@ -7,7 +7,7 @@
   <meta name="description" content="拾遗：本地学习资料库 + 个性化复习助手。seekdb 负责混合检索，PowerContext 负责跨会话记忆。">
   <meta name="color-scheme" content="light">
   <meta property="og:title" content="拾遗 · 学习资料库与复习助手">
-  <meta property="og:description" content="问一句，找回原文与出处；标记一次，薄弱点跨会话留下。seekdb 做混合检索，PowerContext 记复习状态。">
+  <meta property="og:description" content="本地学习资料库：seekdb 混合检索带出处，PowerContext 记住薄弱点。">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#faf6ee">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='32' cy='38' rx='24' ry='21' fill='%23fff6e6' stroke='%23ebd9bc' stroke-width='2'/%3E%3Cpath d='M32 20 C32 15 32 12 32 9' stroke='%235e8c61' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M32 14 C25 13 21 7 23 2 C31 4 34 10 32 14Z' fill='%237fa87a'/%3E%3Ccircle cx='25' cy='36' r='2.4' fill='%234a3f33'/%3E%3Ccircle cx='39' cy='36' r='2.4' fill='%234a3f33'/%3E%3C/svg%3E">
@@ -34,8 +34,6 @@
         <span class="brand-tag">学习资料库与复习助手</span>
       </a>
       <nav class="nav" aria-label="页面导航">
-        <a href="#pain">问题</a>
-        <a href="#features">功能</a>
         <a href="#workbench">界面</a>
         <a href="#architecture">技术</a>
         <a href="#reproduce">复现</a>
@@ -48,12 +46,16 @@
     <section class="hero" id="top">
       <div class="shell hero-grid">
         <div class="hero-copy">
-          <h1><span class="line">把散落的学习资料，</span><span class="line">捡回成<em>可复习</em>的知识库。</span></h1>
+          <h1>
+            <span class="line">资料在本地。</span>
+            <span class="line">检索带出处。</span>
+            <span class="line">复习<em>跨会话</em>。</span>
+          </h1>
           <div class="hero-actions">
             <a class="btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">查看源码 <span aria-hidden="true">↗</span></a>
             <a class="link-inline" href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">按 README 跑起来 <span aria-hidden="true">→</span></a>
           </div>
-          <p class="hero-facts"><span>本地运行</span><span>无需 LLM API</span><span>重启不丢状态</span></p>
+          <p class="hero-facts"><span>单机运行</span><span>无需 LLM API</span><span>重启不丢状态</span></p>
         </div>
 
         <div class="demo" aria-label="检索结果与复习示意">
@@ -75,81 +77,28 @@
               <span class="mini"><span class="mini-btn weak">标记不懂</span><span class="mini-btn">已掌握</span></span>
             </div>
           </article>
-          <svg class="mascot" viewBox="0 0 120 120" aria-hidden="true">
-            <path d="M60 36 C60 28 60 22 60 16" stroke="#5E8C61" stroke-width="4" fill="none" stroke-linecap="round"/>
-            <path d="M60 24 C49 22 42 13 45 5 C56 8 62 15 60 24Z" fill="#7FA87A"/>
-            <path d="M60 24 C71 22 78 13 75 5 C64 8 58 15 60 24Z" fill="#9BC495"/>
-            <ellipse cx="60" cy="76" rx="42" ry="38" fill="#FFF6E6" stroke="#EBD9BC" stroke-width="3"/>
-            <circle cx="46" cy="72" r="4" fill="#4A3F33"/>
-            <circle cx="74" cy="72" r="4" fill="#4A3F33"/>
-            <circle cx="37" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
-            <circle cx="83" cy="84" r="5" fill="#F6C9B0" opacity=".7"/>
-            <path d="M53 84 C57 89 63 89 67 84" stroke="#4A3F33" stroke-width="3" fill="none" stroke-linecap="round"/>
-          </svg>
-          <p class="demo-cap">问一句，找回原文与出处；标记一次，下次先复习。</p>
         </div>
-      </div>
-    </section>
-
-    <section class="section pain" id="pain" aria-labelledby="pain-title">
-      <div class="shell">
-        <h2 id="pain-title" class="section-title">资料在，答案不在。</h2>
-        <div class="pain-grid">
-          <article class="pain-item">
-            <h3>看过，但找不到</h3>
-            <p>答案在某个 PDF 或笔记里，却只能一页页翻，出处也留不下。</p>
-            <p class="pain-fix"><span aria-hidden="true">→</span> seekdb 混合检索，把原文、文件名、块号一起带回来。</p>
-          </article>
-          <article class="pain-item">
-            <h3>不会，但记不住</h3>
-            <p>上次卡住的地方没有记录，重启一次就从头开始。</p>
-            <p class="pain-fix"><span aria-hidden="true">→</span> PowerContext 记住薄弱点，下次打开先提醒。</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section features" id="features" aria-labelledby="features-title">
-      <div class="shell">
-        <h2 id="features-title" class="section-title">一次学习，走完三步。</h2>
-        <ol class="card-row">
-          <li class="index-card">
-            <div class="card-head"><span class="card-code">F1</span><span class="card-tech">seekdb</span></div>
-            <h3>资料导入</h3>
-            <p>PDF、Markdown、TXT 解析、切块写入本地 seekdb，保留文件名与位置。</p>
-            <p class="card-foot">500 字切块 · 重复导入覆盖旧片段</p>
-          </li>
-          <li class="index-card">
-            <div class="card-head"><span class="card-code">F2</span><span class="card-tech">seekdb</span></div>
-            <h3>混合检索</h3>
-            <p>向量语义与全文关键词同时召回，RRF 融合排序，结果带出处和距离。</p>
-            <p class="card-foot">向量 + <code>$contains</code> + 课程过滤</p>
-          </li>
-          <li class="index-card">
-            <div class="card-head"><span class="card-code">F3</span><span class="card-tech">PowerContext</span></div>
-            <h3>复习记忆</h3>
-            <p>标记「不懂 / 已掌握」写入 PowerContext，下次打开先召回薄弱点。</p>
-            <p class="card-foot">固定 scope · 重启不丢</p>
-          </li>
-        </ol>
       </div>
     </section>
 
     <section class="section workbench" id="workbench" aria-labelledby="workbench-title">
       <div class="shell">
-        <h2 id="workbench-title" class="section-title">导入、检索、复习，都在同一页。</h2>
+        <h2 id="workbench-title" class="sr-only">应用界面</h2>
         <figure class="plate">
           <a class="shot-link" href="./assets/app-ui.png" target="_blank" rel="noopener" aria-label="打开应用界面大图">
             <img src="./assets/app-ui.png" width="2880" height="1800" alt="拾遗应用界面：左侧是导入与优先复习，右侧检索「写放大」的结果，每条带文件名、块号与相关度距离。">
           </a>
-          <figcaption>界面实拍 · 检索「写放大」，左侧复习由 PowerContext 召回。 <a class="zoom-link" href="./assets/app-ui.png" target="_blank" rel="noopener">查看原图 <span aria-hidden="true">↗</span></a></figcaption>
+          <figcaption>
+            <span>应用实拍 · 1440 × 900</span>
+            <a class="zoom-link" href="./assets/app-ui.png" target="_blank" rel="noopener">查看原图 <span aria-hidden="true">↗</span></a>
+          </figcaption>
         </figure>
       </div>
     </section>
 
     <section class="section architecture" id="architecture" aria-labelledby="architecture-title">
       <div class="shell">
-        <h2 id="architecture-title" class="section-title">seekdb 管检索，<br class="title-break">PowerContext 管记忆。</h2>
+        <h2 id="architecture-title" class="section-title">seekdb 管检索，PowerContext 管记忆。</h2>
         <div class="ledger">
           <article class="ledger-col">
             <header class="ledger-head">
@@ -181,14 +130,13 @@
             <p class="ledger-foot"><code>scope=studydesk</code> · SQLite 持久化，重启不丢</p>
           </article>
         </div>
-        <p class="division">应用只做编排，不另建影子库。</p>
       </div>
     </section>
 
     <section class="section reproduce" id="reproduce" aria-labelledby="reproduce-title">
       <div class="shell reproduce-grid">
         <div class="reproduce-copy">
-          <h2 id="reproduce-title" class="section-title">在自己的机器上跑起来。</h2>
+          <h2 id="reproduce-title" class="section-title">本地复现。</h2>
           <p>主工程在 <code>qoder/studydesk/</code>，含 FastAPI 服务、原生单页界面、样例资料与验证脚本。</p>
           <div class="reproduce-links">
             <a class="btn-primary" href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">打开仓库 <span aria-hidden="true">↗</span></a>
@@ -196,20 +144,18 @@
           </div>
         </div>
         <div class="terminal">
-          <p class="terminal-bar"><span>本地复现</span><span>bash</span></p>
+          <p class="terminal-bar"><span>qoder/studydesk</span><span>bash</span></p>
           <pre><code><span class="prompt">$</span> bash scripts/seed_model.sh
 <span class="prompt">$</span> powercontext server run        <span class="comment"># 8000</span>
 <span class="prompt">$</span> .venv/bin/python -m app.main  <span class="comment"># 8001</span>
 <span class="prompt">$</span> bash scripts/run_verify.sh     <span class="comment"># S1–S5</span></code></pre>
-          <p class="terminal-note">完整步骤见 README。</p>
         </div>
       </div>
     </section>
 
-    <section class="section impact" id="impact" aria-labelledby="impact-title">
+    <section class="section impact" id="impact" aria-label="使用效果">
       <div class="shell">
-        <h2 id="impact-title" class="section-title">使用效果，等真实数据。</h2>
-        <p class="impact-note">发布后补充：站点访问、试用反馈、复习提效。不预填虚构指标。</p>
+        <p class="impact-note">站点访问、试用反馈与复习提效数据，发布后补充。</p>
       </div>
     </section>
   </main>
@@ -230,7 +176,6 @@
         </svg>
         <strong>拾遗</strong>
       </a>
-      <p>资料留在本地，学习状态跨会话延续。</p>
       <div class="footer-links">
         <a href="https://github.com/xihale/powercontext" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/xihale/powercontext/blob/2026-competition-ecosystem/qoder/studydesk/README.md" target="_blank" rel="noopener">运行说明</a>
@@ -238,22 +183,5 @@
       </div>
     </div>
   </footer>
-
-  <script>
-    (function () {
-      if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      if (!("IntersectionObserver" in window)) return;
-      document.documentElement.classList.add("js");
-      var blocks = Array.prototype.slice.call(document.querySelectorAll(".section .shell"));
-      blocks.forEach(function (el) { el.classList.add("reveal"); });
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
-        });
-      }, { rootMargin: "0px 0px -10% 0px", threshold: 0.08 });
-      blocks.forEach(function (el) { io.observe(el); });
-      setTimeout(function () { blocks.forEach(function (el) { el.classList.add("in"); }); }, 2000);
-    })();
-  </script>
 </body>
 </html>
