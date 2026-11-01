@@ -2,14 +2,14 @@
 
 对照官方要求逐项核对。**评审认平台记录的固定提交**：本地改完没推没提等于没做。
 
-2026-11-01：站点已发布并设为公开（匿名访问 200）；待办只剩 UID/B5/B6 材料、推送 `qoder`、平台表单与 D 项回读。
+2026-11-01：站点已发布并设为公开（匿名访问 200）；`qoder` 已推送到 `ProfYangShengXu/powercontext-2026`。待办只剩 UID/B5/B6 材料、平台表单与 D 项回读。
 
 ## A. 平台表单（登录大赛测试平台 → Qoder 赛题 → 立即提测）
 
 | # | 字段 | 填什么 | 完成前检查 |
 |---|---|---|---|
 | A1 | 项目网站网址 | `https://shiyi-study-0e8e9bd2mk9.qoder.zone` | 2026-11-01 匿名访问 200；可见范围=public |
-| A2 | 代码仓库地址 | `https://github.com/ProfYangShengXu/powercontext-2026`（公开） | **需先推送 `qoder`**；评审能在 `qoder/studydesk/` 看到完整工程 |
+| A2 | 代码仓库地址 | `https://github.com/ProfYangShengXu/powercontext-2026`（公开） | 已推送 `qoder`；评审能在 `qoder/studydesk/` 看到完整工程 |
 | A3 | Qoder 账号 UID | 设置 → 个人资料 → 编辑 里复制 | 与 Sites 站点归属一致；待填 `dev-records/UID.txt` |
 | A4 | 分支 / Commit | 分支固定 `qoder`；Commit 以提交时 C5 输出为准（本文件更新后 SHA 会变） | 基线自查 C1 通过 |
 | A5 | 其余材料上传 | dev-records / 运行说明 / 验证样例 | 见 B |
@@ -31,7 +31,7 @@
 3. [x] 匿名访问返回 200；线上实拍存于 `dev-records/M5-site/site-live.png`。
 4. [ ] 截图 Sites 发布设置页（画面需包含可见范围选项），保存为 `dev-records/M5-site/sites-publish-settings.png`。
 5. [x] 完整 URL 已填入上表 A1；[ ] UID 填入 `dev-records/UID.txt`。
-6. [ ] 推送 `qoder` 到 `ProfYangShengXu/powercontext-2026`，使 A2 的仓库与站内 README 链接可访问。
+6. [x] 已推送 `qoder` 到 `ProfYangShengXu/powercontext-2026`；仓库与站内 README 链接可访问。
 
 ## C. 提交前自查（逐条执行）
 
