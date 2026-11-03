@@ -1,0 +1,28 @@
+[
+  {
+    "n": 100000,
+    "d": 128,
+    "k": 10,
+    "nq": 200,
+    "cpu_sec": 0.312,
+    "gpu_build_sec": 0.071,
+    "gpu_search_sec": 0.025,
+    "speedup_total": 3.24,
+    "agree@k": 1.0,
+    "hardware": "RTX 3090 24G / driver 570.133.07 / cuvs-cu12 26.2.0 / cupy 14.2",
+    "measured_at": "2026-11-02"
+  },
+  {
+    "n": 500000,
+    "d": 768,
+    "k": 10,
+    "nq": 200,
+    "cpu_sec": 3.492,
+    "gpu_build_sec": 0.135,
+    "gpu_search_sec": 0.076,
+    "speedup_total": 16.5,
+    "agree@k": 1.0,
+    "hardware": "RTX 3090 24G / driver 570.133.07 / cuvs-cu12 26.2.0 / cupy 14.2",
+    "measured_at": "2026-11-02"
+  }
+]
